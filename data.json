@@ -1,0 +1,37 @@
+{
+    "normal": {
+        "rows": 20,
+        "cols": 10,
+        "symbol-background": "·",
+        "symbol-tetris": "□",
+        "forms": [
+            "I",
+            "Q",
+            "Ll",
+            "Lr",
+            "Zr",
+            "Zl",
+            "T"
+        ]
+    },
+    "konfiguration": {
+        "rows": 15,
+        "cols": 15,
+        "symbol-background": ",,",
+        "symbol-tetris": "##",
+        "forms": [
+            "I",
+            "Q",
+            "Ll",
+            "Lr",
+            "Zr",
+            "Zl",
+            "T",
+            "X",
+            ""
+        ]
+    },
+    "highscore": 13400,
+    "game-counter": 14,
+    "gametime": 2299.7148287296295
+}
