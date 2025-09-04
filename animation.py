@@ -1,18 +1,22 @@
 
 import time
-def animation(text):
 
-    print("\033[H\033[J", end="")
-    #print('\033[?25l')# Konsole löschen / curser verstecken
+def animation(text, time_per_char): # zeichen für zeichen
     lines = text.splitlines()
-    max_len = max(len(line) for line in lines)  # Maximale Breite des Logos
-    revealed_logo = [" " * max_len for _ in lines]  # Start mit Leerzeichen
-    print('')
-    for row in range(len(lines)):
-        for col in range(len(lines[row])):
-            revealed_logo[row] = (
-                revealed_logo[row][:col] + lines[row][col] + revealed_logo[row][col+1:]
-            )
-            print("\033[H", end="")  # Cursor zurücksetzen
-            print("\033[32m\n".join(revealed_logo))  # Logo mit aktuellem Fortschritt drucken
-            time.sleep(0.005)  # Kurze Pause zwischen den Zeichen
+    # Konsole löschen
+    print("\033[H\033[J", end="")
+    # Cursor verstecken
+    print("\033[?25l", end="")
+
+    logo = '\033[32m' # grün
+
+    # für jede zeile, wird jedes zeichen zu logo hinzugefügt und geprintet
+    for line in lines:
+        for ch in line:
+            logo += ch
+            print("\033[H", end="")
+            print(logo)
+            if ch != ' ':
+                time.sleep(time_per_char)
+        logo += '\n'
+

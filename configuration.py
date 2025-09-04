@@ -44,11 +44,12 @@ def print_form(form, abstandl, data):
 def form_konfigurations_eingabe(form_names):
     while True:
         formen = input('\033[0mFormen: (gib die Nummern ein.) (Beispiel: 1, 2, 3, 4)\033[31m')
-        formen = formen.replace(' ', '')
-        formen = list(map(int, formen.split(',')))
-        print(formen)
-        form_choice = []
         try:
+            formen = formen.replace(' ', '')
+            formen = list(map(int, formen.split(',')))
+            print(formen)
+            form_choice = []
+
             for number in formen:
                 form_choice.append(form_names[number-1])
             return form_choice
@@ -58,11 +59,15 @@ def form_konfigurations_eingabe(form_names):
 def row_col_valid_checker(placeholder):
     while True:
         eingabe = input(f'\033[0m{placeholder} des Spielfelds: \033[31m')
-        try:
-            eingabe = int(eingabe)
-            return eingabe
-        except:
-            print('Falsche Eingabe')
+
+        if eingabe in ('^[', '\x1b'):
+            return None
+        else:
+            try:
+                eingabe = int(eingabe)
+                return eingabe
+            except:
+                print('Falsche Eingabe')
 
 
 def spiel_konfigurieren(forms, data):
@@ -74,19 +79,50 @@ def spiel_konfigurieren(forms, data):
     #print('Deine aktuelle Konfiguration:')
 
     print_aktuelle_konfiguration(data, forms)
-    abbruch = input('Break with enter, continue with anderer Eingabe\n')
-    if abbruch == '':
+    print('\033[?25h', end='')
+    abbruch = input('Break with enter or ESC (mit ESC, dann Enter kann man immer abbrechen), continue with anderer Eingabe\n')
+    if abbruch in ('', '^[', '\x1b'):
+        print('\033[?25l', end='')
         return None
 
     #print("\033[H", end="")
 
-
+    # durch die is None abfrage bei jeder eingabe abbrechbar
     rows = row_col_valid_checker('Reihen')
+    if rows is None: # ist none, wenn abbruchbedingung ESC erfüllt ist
+        return None
+
     cols = row_col_valid_checker('Spalten')
-    backgound_symbol = input('\033[0mHintergrundsymbol: \033[31m')
+    if cols is None:
+        return None
+
+    # auch abbrechbar
+    background_symbol = input('\033[0mHintergrundsymbol: \033[31m')
+    if background_symbol in ('^[', '\x1b'):
+        return None
+
     tetris_symbol = input('\033[0mTetris-Symbol: \033[31m')
+    if tetris_symbol in ( '^[', '\x1b'):
+        return None
+
+    colors = [
+        "\033[31m",
+        "\033[32m",
+        "\033[33m",
+        "\033[34m",
+        "\033[35m",
+        "\033[36m",
+        "\033[37m"
+    ]
+
+    background_color = input(f'\033[0mHintergrundfarbe ({colors[0]}0, {colors[1]}1, {colors[2]}2, {colors[3]}3, {colors[4]}4, {colors[5]}5, {colors[6]}6): \033[31m')
+    if background_symbol in ( '^[', '\x1b'):
+        return None
+
+
     form_names = list(forms.keys())
-    print(form_names, 'ööö')
+
+    #print(form_names, 'ööö')
     print('\033[0m')
     #for form in form_names:
     #    print_form(forms[form], 5)
@@ -99,13 +135,16 @@ def spiel_konfigurieren(forms, data):
 
     form_choice_list = form_konfigurations_eingabe(form_names)
     bestaetigung = input('Bestätige deine Konfiguration, oder breche ab mit . ab')
+    print('\033[?25l', end='')
+
     if bestaetigung == '.':
-        return
+        return None
     else:
         data['konfiguration']['rows'] = rows
         data['konfiguration']['cols'] = cols
         data['konfiguration']['symbol-tetris'] = tetris_symbol
-        data['konfiguration']['symbol-background'] = backgound_symbol
+        data['konfiguration']['symbol-background'] = background_symbol
         data['konfiguration']['forms'] = form_choice_list
+        data['konfiguration']['background-color'] = background_color
 
         json.dump(data, open('data.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
