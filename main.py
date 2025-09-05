@@ -24,6 +24,7 @@ def clear_console():
 
 def valid_choice():
     while True:
+        clear_console()
         print("\033[H\033[J", end='')
         print('\033[32m')
         #print(asciiart.tetris)
@@ -33,7 +34,7 @@ def valid_choice():
         print("""
         Wähle aus, was du machen willst (1-7):
             \033[31m1\033[0m Normales Spiel
-            \033[31m2\033[0m gespeicherte Konfiguration spielen
+            \033[31m2\033[0m Gespeicherte Konfiguration spielen
             \033[31m3\033[0m Konfiguration ansehen / Spiel konfigurieren 
             \033[31m4\033[0m Neue Formen hinzugügen  
             \033[31m5\033[0m Statistik / Informationen / Steuerung
