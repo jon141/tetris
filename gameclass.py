@@ -55,10 +55,14 @@ class Tetris:
         self.falling_tetris_field = self.create_empty_field() #self.create_field() # Enthält nur aktuellen Tetris-Stein mit Position und Rotation-Level
         self.existing_block_field = self.create_empty_field() # Alle Blöcke, die Fest sind (schon plaziert wurden)
         self.intersection_field = self.create_empty_field() # SChnittmenge zwischen den beiden anderen Feldern, wird in printbares Feld übersetzt
+        self.old_intersection_field = self.create_empty_field()
 
 
         self.color_cache = []
         self.tetris_form_cache = []
+
+        # der cache soll sich dynamisch anpassen, wenn es mehr oder weniger steine im spiel gibt
+        self.form_cache_max = int(len(form_select)*0.72)         # 72 Prozent aller verschiedenen Steine; abgerundet auf eine ganze zahl -> bei regulären 7 steinen macht das 5
 
         self.starttime = time.time()
 
@@ -107,7 +111,7 @@ class Tetris:
 
         # einrichung des spiels und der ausgabe
         self.clear_console() # erst konsole frei macen
-        self.print_intersection_field() # leeres feld printen
+        self.print_field() # leeres feld printen
         time.sleep(2) # längere pause wegen start
 
         self.starttime = time.time() # zeitzählung starten
@@ -116,9 +120,8 @@ class Tetris:
 
 
         self.spawn_tetris() # ersten stein spawnen
-        self.create_intersection_field() # schnittfeld erstellen
-        self.clear_console() # konsole leeren
-        self.print_intersection_field() # schnittfeld ausgeeben
+        self.create_intersection_field()
+        self.update_field()
 
 
 
@@ -140,6 +143,9 @@ class Tetris:
                             self.gameover = True #???
                             self.clear_console()
                             break
+                        elif key in ['r', 'R']:  # wenn man die konsole zu klien zieht, ändern sich die koordinaten und es kommt zu problemen beim überzeichenen; dann einfach mit r reset neuladen
+                            self.clear_console() # löscht alles und
+                            self.print_field()   # erstellt das spielfeld neu auf der konsole
                     time.sleep(0.005)
 
         # Threads definieren: falling clock und keyinput
@@ -175,7 +181,7 @@ class Tetris:
 
         self.clear_console()
         self.clear_console()
-        self.print_intersection_field()
+        self.print_field()
         print(f'\033[31m{asciiart.gameover}\033[0m')
 
 
@@ -191,12 +197,10 @@ class Tetris:
         input("Enter zum beenden...")  # Bei Enter zurück zur Spielauswahl
 
 
-
-
     def create_empty_field(self): # erstelle eine Zweidimensionale Liste aus den angegebenen reihen und spalten: zb [ [0, 0, 0], [0, 0, 0], [0, 0, 0] ]
         return [[0 for col in range(self.cols)] for row in range(self.rows)]
 
-    def print_intersection_field(self):
+    def print_field(self):
         frame_size = (self.cols * (1+len(self.backgound)) + 3) # optional *3, wenn unten zwei leerzeichen
         margin = 14
 
@@ -220,11 +224,41 @@ class Tetris:
         field += (margin*' '+frame_size * '‾')      # rahmen nach unten abschließen
 
         print(field)
+        #if not self.gameover:
+        #    if not self.quit_game:
+        #        self.update_gametime()
+
+    def update_field(self): # auch score updaten
+        # Score updaten:
+        sys.stdout.write("\033[2;22H") # score fängt in zeile 2 zeichen 22 an
+        sys.stdout.write(f"\033[31m{self.score:<5}")  # <5 -> Überschreiben alter Stellen # und rot
+        sys.stdout.flush()
+
+        margin = 14  #  Rand links
+        background_width = len(self.backgound)
+
+        for y, row in enumerate(self.intersection_field): # für jede Reihe im neuen intersection_field; mit index y
+            for x, col in enumerate(row): # jedes element aus der Reihe mit index x
+                if self.old_intersection_field[y][x] != col: # wenn das element nicht mit dem an der gleichen position im alten feld übereinstimmt, muss das feld an der stelle geupdatet werden
+                    # Cursor positionieren
+                    cursor_y = 3 + (y+1) # +3 wegen abstand von oben (mit rahmen, Score usw); (y+1) weil erstes element index 0 hat, der curser aber mit koordinaten 1 | 1 anfängt
+                    cursor_x = margin + 1 + (x+1) * (1 + background_width)  # +1 wegen rahmen; (1 + background_width) wegen lücke und (x+1) weil das erste element index 0 hat
+
+                    sys.stdout.write(f"\033[{cursor_y};{cursor_x}H") # curser an koordinaten
+
+                    if col in [1, 2, 3, 4, 5, 6, 7]: # wird geschaut, welche Farbe der Stein hat und ov es einer ist
+                        sys.stdout.write(f"{colors[col - 1]}{self.foreground}\033[0m") # überschreiben
+                    else: # wenn kein stein, sondern Hintergrund
+                        sys.stdout.write(f"{colors[self.backgound_color]}{self.backgound}\033[0m")
+
+        sys.stdout.flush()
+
         if not self.gameover:
-            if not self.quit_game:
-                self.update_gametime()
+           if not self.quit_game:
+               self.update_gametime()
 
     def create_intersection_field(self):
+        self.old_intersection_field = copy.deepcopy(self.intersection_field)  # aktuelles feld wird zum alten und neues wird erstellt
         self.intersection_field = copy.deepcopy(self.existing_block_field)  # das intersection_field (schnittmenge) wird mit existing_block_field  (Plazierte steine feld) überschrieben (Deepcopy, weil sonst Doof)
         for row_index, row in enumerate(self.falling_tetris_field):     # jede reihe im falling_tetris_field einzeln
             for col_index, col in enumerate(row):
@@ -268,7 +302,7 @@ class Tetris:
         while True: # immer letzte 5 formen werden als cache gespeichert, damit eine farbe nicht mehrmals hintereinander kommt
             form_choice = random.choice(self.form_select)
             if form_choice not in self.tetris_form_cache:
-                if len(self.tetris_form_cache) > 4:
+                if len(self.tetris_form_cache) > self.form_cache_max - 1:
                     self.tetris_form_cache.pop(0)
                 self.tetris_form_cache.append(form_choice)
                 break
@@ -293,12 +327,11 @@ class Tetris:
             self.gameover = True
             self.expand_existing_block_field(False)
             self.create_intersection_field()
-            self.print_intersection_field()
+            self.update_field()
         #self.testprint_field_form(self.falling_tetris_field)
         self.score += 10
         self.create_intersection_field()
-        self.clear_console()
-        self.print_intersection_field()
+        self.update_field()
 
 
     def rotate_tetris_in_falling_field(self): ### !!!Wichtig: es darf nur rotiert werden, wenn nach rechts und unten noch genug Platz ist
@@ -325,9 +358,7 @@ class Tetris:
 
                 self.form_rotation_level[1] += 1
                 self.create_intersection_field()
-                self.clear_console()
-
-                self.print_intersection_field()
+                self.update_field()
             else:  # sonst soll nichts passieren
                 pass
         else:
@@ -356,9 +387,7 @@ class Tetris:
             #print(self.rows - y_position - height)
             self.coordinates[1] += 1 #y-koordinate um 1 erhöhen
             self.create_intersection_field()
-            self.clear_console()
-
-            self.print_intersection_field()
+            self.update_field()
         else:
             self.falling_tetris_field = backup
             #print('unten angekommen, oder überschneidung: Feld der exestierenden Blöcke muss erweitert werden.')
@@ -386,9 +415,7 @@ class Tetris:
             else:
                 self.coordinates[0] += 1
                 self.create_intersection_field()
-                self.clear_console()
-
-                self.print_intersection_field()
+                self.update_field()
         else:
             pass
             #print('Nicht genug Platz')
@@ -411,9 +438,7 @@ class Tetris:
             else: # sonst die koordinaten verändern und das durch die änderung (verschiebung) entstandene Feld erstellen und ausgeben
                 self.coordinates[0] -= 1
                 self.create_intersection_field()
-                self.clear_console()
-
-                self.print_intersection_field()
+                self.update_field()
 
         else:
             pass

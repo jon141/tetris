@@ -70,7 +70,12 @@ while True:
         #print('1')
         print("\033[H\033[J", end='') # ziehe dein bildschirm so groß, bis du alle 4 Ecken siehst
         #print_ramen(150, 30)
-        input('Mach das Fenster ausreichend groß!!! Spiel kann beendet werden, wenn b/q/ESC gedrückt wird. Press enter to start the Game.')
+        input('''
+Mach das Fenster ausreichend groß!!! 
+Spiel kann beendet werden, wenn b/q/ESC gedrückt wird.
+Falls sich das Spielfeld durch Veränderung der Terminalgröße unbrauchbar wird, drücke 'r', um es neu zu laden
+
+Press enter to start the Game.''')
         print("\033[H\033[J", end='')
         print(f'\033[36m{asciiart.tetris_gamestart}\033[0m', end='')
         time.sleep(1)
