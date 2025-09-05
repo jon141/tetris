@@ -26,19 +26,19 @@ Alle existierenden Formen:
     for number, name in enumerate(form_names):
         print(number + 1, ':', name)
         form = forms[name]
-        print_form(form, 3, data)
+        print_form(form, 3, values_dict['symbol-tetris'], values_dict['symbol-background'])
         print(15*'_')
 
 
-def print_form(form, abstandl, data):
+def print_form(form, abstandl, symbol_tetris, symbol_background):
     for row in form:
         row_string = abstandl*' '
         for col in row:
             # print(col)
             if col == 1:
-                row_string += f"\033[32m{data['konfiguration']['symbol-tetris']} \033[0m"  # \033[44m  \033[0m
+                row_string += f"\033[32m{symbol_tetris} \033[0m"  # \033[44m  \033[0m
             elif col == 0:
-                row_string += f"\033[34m{data['konfiguration']['symbol-background']} \033[0m"  # \033[44m  \033[0m
+                row_string += f"\033[34m{symbol_background} \033[0m"  # \033[44m  \033[0m
         print(row_string)
 
 def form_konfigurations_eingabe(form_names):
@@ -101,9 +101,13 @@ def spiel_konfigurieren(forms, data):
     if background_symbol in ('^[', '\x1b'):
         return None
 
-    tetris_symbol = input('\033[0mTetris-Symbol: \033[31m')
-    if tetris_symbol in ( '^[', '\x1b'):
-        return None
+    while True: # wenn vorder und hintergrund nicht gleich lang ist, verschiebt sich alles im spielfeld
+        tetris_symbol = input('\033[0mTetris-Symbol: \033[31m')
+        if tetris_symbol in ( '^[', '\x1b'):
+            return None
+        if len(tetris_symbol) != len(background_symbol):
+            print('Das Tetris- und Hintergrundsymbol müssen gleich viele Zeichen beinhalten.')
+        else: break
 
     colors = [
         "\033[31m",
@@ -115,9 +119,17 @@ def spiel_konfigurieren(forms, data):
         "\033[37m"
     ]
 
-    background_color = input(f'\033[0mHintergrundfarbe ({colors[0]}0, {colors[1]}1, {colors[2]}2, {colors[3]}3, {colors[4]}4, {colors[5]}5, {colors[6]}6): \033[31m')
-    if background_symbol in ( '^[', '\x1b'):
-        return None
+    while True:
+        try:
+            background_color = int(input(f'\033[0mHintergrundfarbe ({colors[0]}0, {colors[1]}1, {colors[2]}2, {colors[3]}3, {colors[4]}4, {colors[5]}5, {colors[6]}6): \033[31m'))
+            if str(background_color) in ( '^[', '\x1b'):
+                return None
+            if background_color in (0, 1, 2, 3, 4, 5, 6):
+                break
+            else:
+                print('\033[37mFalsche Eingabe.')
+        except:
+            print('\033[37mFalsche Eingabe.')
 
 
     form_names = list(forms.keys())
@@ -130,7 +142,7 @@ def spiel_konfigurieren(forms, data):
     for number, name in enumerate(form_names):
         print(number + 1, ':', name)
         form = forms[name]
-        print_form(form, 3, data)
+        print_form(form, 3, tetris_symbol, background_symbol) # symbole der neuen konfiguration übergeben
         print(15*'_')
 
     form_choice_list = form_konfigurations_eingabe(form_names)

@@ -25,7 +25,7 @@ colors = [ # Farbe, der plazierten Blöcke kann entfernt werden, damit es nicht 
 
 
 class Tetris:
-    def __init__(self, rows: int, cols: int, background: str, background_color: str, foreground: str, forms: dict, form_select: list):#, placed_color: str): #evtl. noch gamemode
+    def __init__(self, rows: int, cols: int, background: str, background_color: int, foreground: str, forms: dict, form_select: list):#, placed_color: str): #evtl. noch gamemode
         # konfigurationsvariablen
         self.rows = rows #Reihen
         self.cols = cols # spalten
@@ -159,7 +159,7 @@ class Tetris:
         return [[0 for col in range(self.cols)] for row in range(self.rows)]
 
     def print_intersection_field(self):
-        frame_size = (self.cols * 2 + 3) # optional *3, wenn unten zwei leerzeichen
+        frame_size = (self.cols * (1+len(self.backgound)) + 3) # optional *3, wenn unten zwei leerzeichen
         margin = 14
 
         field = f'''{20*'_'}

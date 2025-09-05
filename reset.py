@@ -53,7 +53,7 @@ data_default = {
     "konfiguration": {
         "rows": 20,
         "cols": 10,
-        "symbol-background": "😀",
+        "symbol-background": "☺",
         "symbol-tetris": "#",
         "background-color": 3,
         "forms": [
