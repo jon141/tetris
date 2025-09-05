@@ -26,7 +26,8 @@ def valid_choice():
     while True:
         print("\033[H\033[J", end='')
         print('\033[32m')
-        print(asciiart.tetris)
+        #print(asciiart.tetris)
+        print(colored_tetris_logo)
         print('\033[0m')
 
         print("""
@@ -58,7 +59,7 @@ def gamestart(config_data):
 
 clear_console()
 print('\033[?25l') # curser verstecken
-animation.animation(asciiart.tetris, 0.008) # Tetris Schriftzug erscheint zeichen für zeichen
+colored_tetris_logo = animation.animation(asciiart.tetris, 0.01) # Tetris Schriftzug erscheint zeichen für zeichen
 while True:
     print("\033[H\033[J", end='')
     choice = valid_choice()
@@ -92,6 +93,7 @@ while True:
     elif choice == '5':
         print("\033[H\033[J", end='')
         clear_console()
+        data = json.load(open('data.json', 'r', encoding='utf-8'))
         statistik.print_statistics(data, asciiart)
         input()
     elif choice == '6':
@@ -105,6 +107,7 @@ while True:
             forms = json.load(open('forms.json', 'r', encoding='utf-8'))
             data = json.load(open('data.json', 'r', encoding='utf-8'))
     else:
+        print('\033[?25h')
         break
     #input('')
 

@@ -5,6 +5,7 @@ import os
 import threading
 import time
 import math
+import sys
 import traceback
 import asciiart
 from keyboard_input import KeyboardInput
@@ -59,10 +60,24 @@ class Tetris:
         self.color_cache = []
         self.tetris_form_cache = []
 
+        self.starttime = time.time()
+
+    def update_gametime(self): # soll immer beim printen des intersection field aktualisiert werden
+        gametime = time.time() - self.starttime
+        sys.stdout.write("\033[4;2H")
+        sys.stdout.write(f"\033[33m{gametime:.0f}s\033[37m")  # überschreibt die Zeichen
+        sys.stdout.flush()
+
+        #sys.stdout.write("\033[999;0H")  # curser wieder nach unten
+        #sys.stdout.flush()
 
     def start_game(self):
 
-        time_start = time.time()
+
+        def gametime_clock():
+            while not self.gameover:
+                self.update_gametime()
+                time.sleep(0.1)
 
         def clock():  # lässt die Steine FAllen, mit ansteigender fallgeschwindigkeit
             # simulation mit Exponentiellem wachstum
@@ -91,12 +106,15 @@ class Tetris:
 
 
         # einrichung des spiels und der ausgabe
-
         self.clear_console() # erst konsole frei macen
-        ###self.create_intersection_field() #   ### ???
-        ###self.clear_console() ### ???
         self.print_intersection_field() # leeres feld printen
         time.sleep(2) # längere pause wegen start
+
+        self.starttime = time.time() # zeitzählung starten
+        gametime_clock_thread = threading.Thread(target=gametime_clock)
+        gametime_clock_thread.start()
+
+
         self.spawn_tetris() # ersten stein spawnen
         self.create_intersection_field() # schnittfeld erstellen
         self.clear_console() # konsole leeren
@@ -119,6 +137,7 @@ class Tetris:
                             self.move_down()
                         elif key in ['b', '\x1b', 'q']:  # ESC; b: break; q: quit
                             self.quit_game = True
+                            self.gameover = True #???
                             self.clear_console()
                             break
                     time.sleep(0.005)
@@ -134,8 +153,9 @@ class Tetris:
         # Warten bis Threads fertig sind
         clock_thread.join()
         key_loop_thread.join()
-                
-        self.end_game(starttime=time_start)
+        gametime_clock_thread.join()
+
+        self.end_game(starttime=self.starttime)
 
     def end_game(self, starttime):
 
@@ -143,9 +163,12 @@ class Tetris:
 
         data = json.load(open('data.json', 'r', encoding='utf-8'))
 
+        new_highscore = False
+
         if self.score > data['highscore']:
+            new_highscore = True
             data['highscore'] = self.score
-        game_time = time.time() - starttime
+        game_time = time.time() - starttime - 2
         data['gametime'] += game_time
         data['game-counter'] += 1
         json.dump(data, open('data.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
@@ -155,7 +178,19 @@ class Tetris:
         self.print_intersection_field()
         print(f'\033[31m{asciiart.gameover}\033[0m')
 
+
+        if new_highscore:
+            print(f'\033[34m{asciiart.highscore}\033[0m')
+
+        self.update_gametime()
+
+        # kurser wieder anch unten
+        sys.stdout.write("\033[999;0H")
+        sys.stdout.flush()
+
         input("Enter zum beenden...")  # Bei Enter zurück zur Spielauswahl
+
+
 
 
     def create_empty_field(self): # erstelle eine Zweidimensionale Liste aus den angegebenen reihen und spalten: zb [ [0, 0, 0], [0, 0, 0], [0, 0, 0] ]
@@ -185,6 +220,9 @@ class Tetris:
         field += (margin*' '+frame_size * '‾')      # rahmen nach unten abschließen
 
         print(field)
+        if not self.gameover:
+            if not self.quit_game:
+                self.update_gametime()
 
     def create_intersection_field(self):
         self.intersection_field = copy.deepcopy(self.existing_block_field)  # das intersection_field (schnittmenge) wird mit existing_block_field  (Plazierte steine feld) überschrieben (Deepcopy, weil sonst Doof)
@@ -261,6 +299,7 @@ class Tetris:
         self.create_intersection_field()
         self.clear_console()
         self.print_intersection_field()
+
 
     def rotate_tetris_in_falling_field(self): ### !!!Wichtig: es darf nur rotiert werden, wenn nach rechts und unten noch genug Platz ist
         x_position, y_position = self.coordinates # Koordinaten im falling field
