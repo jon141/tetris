@@ -42,7 +42,7 @@ def valid_choice():
 
         choice = input('            \033[0m\033[39m') # setzt curserfarbe zurück
 
-        if choice in ['1', '2', '3', '4', '5', '6', '7']:
+        if choice in ['1', '2', '3', '4', '5', '6', '7', 'b', 'q', '^[', '\x1b']:
             return choice
 
 

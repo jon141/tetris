@@ -13,7 +13,7 @@ from keyboard_input import KeyboardInput
 ###data = json.load(open('data.json', 'r', encoding='utf-8'))
 
 # Idee: Farben nicht komplett random, nie 2x die gleiche, oder wenn eine Farbe kommt muss mind 2x eine andere kommen (speicherung in liste mit letzte 2 Farben)
-colors = [ # Farbe, der plazierten Blöcke kann entfernt werden, damit es nicht in der gleichen Farbe spawnt
+colors = [ 
             "\033[31m",
             "\033[32m",
             "\033[33m",
@@ -55,6 +55,9 @@ class Tetris:
         self.existing_block_field = self.create_empty_field() # Alle Blöcke, die Fest sind (schon plaziert wurden)
         self.intersection_field = self.create_empty_field() # SChnittmenge zwischen den beiden anderen Feldern, wird in printbares Feld übersetzt
 
+
+        self.color_cache = []
+        self.tetris_form_cache = []
 
 
     def start_game(self):
@@ -207,23 +210,36 @@ class Tetris:
 
         self.check_rows_for_delete()
 
-        self.current_color_index = random.randint(0, 6)
+        while True: # immer letzte 3 farben werden als cache gespeichert, damit eine farbe nicht mehrmals hintereinander kommt
+            color_choice = random.randint(0, 6)
+            if color_choice not in self.color_cache:
+                self.current_color_index = color_choice
+                if len(self.color_cache) > 2:
+                    self.color_cache.pop(0)
+                self.color_cache.append(color_choice)
+                break
 
         self.recentlyspawned = True
         def set_recentlyspawned_False():
             time.sleep(0.3)
             self.recentlyspawned = False
         thread = threading.Thread(target=set_recentlyspawned_False)
-        #print(self.recentlyspawned, 20*'--')
         thread.start()
-        #print(self.recentlyspawned, 20*'++')
 
-        #print(self.forms, 'forms')
-        random_form = random.choice(self.form_select) #Zufälligen Formnamen aus Auswahl auswählen
-        tetris_form = self.forms[random_form] # Matrix der Form aus dem Dict hohlen
-        #self.testprint_field_form(tetris_form)
-        #tetris_form = [row for row in tetris_form if not all(cell == 0 for cell in row)] # entfernt die lehren reihen
-        self.form_rotation_level = [random_form, 0] #Zufällig generierter Name der Form und Rotation-Status, der 0 ist
+
+        while True: # immer letzte 5 formen werden als cache gespeichert, damit eine farbe nicht mehrmals hintereinander kommt
+            form_choice = random.choice(self.form_select)
+            if form_choice not in self.tetris_form_cache:
+                if len(self.tetris_form_cache) > 4:
+                    self.tetris_form_cache.pop(0)
+                self.tetris_form_cache.append(form_choice)
+                break
+        #random_form = random.choice(self.form_select) #Zufälligen Formnamen aus Auswahl auswählen
+
+        tetris_form = self.forms[form_choice] # Matrix der Form aus dem Dict hohlen
+
+
+        self.form_rotation_level = [form_choice, 0] #Zufällig generierter Name der Form und Rotation-Status, der 0 ist
 
         widht = len(tetris_form[0]) # Breite der Tetris-Form
         x_position = (self.cols // 2) - (widht // 2)  # x-Postion für den Spawn soll in der Mitte des Feldes sein auf höhe 0
