@@ -206,10 +206,10 @@ class Tetris:
 
         field = f'''{20*'_'}
 \033[31m\033[1mT E T R I S   Score: {self.score}\033[0m
-{margin*' '+ frame_size * '_'}\n'''
+{margin*' '+  "╔" + "═" * (frame_size-2) + "╗"}\n'''
 
         for row in self.intersection_field: # für jede reihe im Feld der SChnittmenge
-            row_string = margin*' '+'| '    # wird erstmal ein Abstand zur linken seite und der Rahmen erstellt
+            row_string = margin*' ' + '║ '    # wird erstmal ein Abstand zur linken seite und der Rahmen erstellt
             for col in row:                 # für jeden Eintrag in der Reihe
                 #print(col)
                 if col in [1, 2, 3, 4, 5, 6, 7]: # wird geschaut, welche Farbe die Tetrissteine im Feld haben
@@ -217,11 +217,11 @@ class Tetris:
 
                 else:
                     row_string += f"{colors[self.backgound_color]}{self.backgound} "  # außer der Eintrag ist nur Hintergrund
-            row_string += '\033[37m|' # RAhmen auf der anderen Seite schließen
+            row_string += '\033[37m║' # RAhmen auf der anderen Seite schließen
             #print(row_string)
             field += f'{row_string}\n' # den String der reihe zum string des gesammten Feldes hinzufügen
 
-        field += (margin*' '+frame_size * '‾')      # rahmen nach unten abschließen
+        field += (margin*' '+ "╚" + "═" * (frame_size-2) + "╝")      # rahmen nach unten abschließen
 
         print(field)
         #if not self.gameover:
