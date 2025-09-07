@@ -60,7 +60,7 @@ def gamestart(config_data):
 
 clear_console()
 print('\033[?25l') # curser verstecken
-colored_tetris_logo = animation.animation(asciiart.tetris, 0.01) # Tetris Schriftzug erscheint zeichen für zeichen
+colored_tetris_logo = animation.animation(asciiart.tetris, 0.01, 0, 'random') # Tetris Schriftzug erscheint zeichen für zeichen
 while True:
     print("\033[H\033[J", end='')
     choice = valid_choice()

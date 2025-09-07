@@ -8,6 +8,7 @@ import math
 import sys
 import traceback
 import asciiart
+import animation
 from keyboard_input import KeyboardInput
 
 
@@ -68,7 +69,7 @@ class Tetris:
 
     def update_gametime(self): # soll immer beim printen des intersection field aktualisiert werden
         gametime = time.time() - self.starttime
-        sys.stdout.write("\033[4;2H")
+        sys.stdout.write("\033[3;1H")
         sys.stdout.write(f"\033[33m{gametime:.0f}s\033[37m")  # überschreibt die Zeichen
         sys.stdout.flush()
 
@@ -182,11 +183,13 @@ class Tetris:
         self.clear_console()
         self.clear_console()
         self.print_field()
-        print(f'\033[31m{asciiart.gameover}\033[0m')
+        #print(f'\033[31m{asciiart.gameover}\033[0m')
+        animation.animation(asciiart.gameover, 0.005, 5 + self.rows, 0)
 
 
         if new_highscore:
-            print(f'\033[34m{asciiart.highscore}\033[0m')
+            #print(f'\033[34m{asciiart.highscore}\033[0m')
+            animation.animation(asciiart.highscore, 0.005, 5 + self.rows + 7, 'random')
 
         self.update_gametime()
 
@@ -202,14 +205,14 @@ class Tetris:
 
     def print_field(self):
         frame_size = (self.cols * (1+len(self.backgound)) + 3) # optional *3, wenn unten zwei leerzeichen
-        margin = 14
+        margin_left = 14
 
         field = f'''{20*'_'}
 \033[31m\033[1mT E T R I S   Score: {self.score}\033[0m
-{margin*' '+  "╔" + "═" * (frame_size-2) + "╗"}\n'''
+{margin_left*' '+  "╔" + "═" * (frame_size-2) + "╗"}\n'''
 
         for row in self.intersection_field: # für jede reihe im Feld der SChnittmenge
-            row_string = margin*' ' + '║ '    # wird erstmal ein Abstand zur linken seite und der Rahmen erstellt
+            row_string = margin_left*' ' + '║ '    # wird erstmal ein Abstand zur linken seite und der Rahmen erstellt
             for col in row:                 # für jeden Eintrag in der Reihe
                 #print(col)
                 if col in [1, 2, 3, 4, 5, 6, 7]: # wird geschaut, welche Farbe die Tetrissteine im Feld haben
@@ -221,7 +224,7 @@ class Tetris:
             #print(row_string)
             field += f'{row_string}\n' # den String der reihe zum string des gesammten Feldes hinzufügen
 
-        field += (margin*' '+ "╚" + "═" * (frame_size-2) + "╝")      # rahmen nach unten abschließen
+        field += (margin_left*' '+ "╚" + "═" * (frame_size-2) + "╝")      # rahmen nach unten abschließen
 
         print(field)
         #if not self.gameover:
@@ -234,15 +237,16 @@ class Tetris:
         sys.stdout.write(f"\033[31m{self.score:<5}")  # <5 -> Überschreiben alter Stellen # und rot
         sys.stdout.flush()
 
-        margin = 14  #  Rand links
+        margin_left = 14  #  Rand links
+        margin_top = 3
         background_width = len(self.backgound)
 
         for y, row in enumerate(self.intersection_field): # für jede Reihe im neuen intersection_field; mit index y
             for x, col in enumerate(row): # jedes element aus der Reihe mit index x
                 if self.old_intersection_field[y][x] != col: # wenn das element nicht mit dem an der gleichen position im alten feld übereinstimmt, muss das feld an der stelle geupdatet werden
                     # Cursor positionieren
-                    cursor_y = 3 + (y+1) # +3 wegen abstand von oben (mit rahmen, Score usw); (y+1) weil erstes element index 0 hat, der curser aber mit koordinaten 1 | 1 anfängt
-                    cursor_x = margin + 1 + (x+1) * (1 + background_width)  # +1 wegen rahmen; (1 + background_width) wegen lücke und (x+1) weil das erste element index 0 hat
+                    cursor_y = margin_top + (y+1) # +3 wegen abstand von oben (mit rahmen, Score usw); (y+1) weil erstes element index 0 hat, der curser aber mit koordinaten 1 | 1 anfängt
+                    cursor_x = margin_left + 1 + (x+1) * (1 + background_width)  # +1 wegen rahmen; (1 + background_width) wegen lücke und (x+1) weil das erste element index 0 hat
 
                     sys.stdout.write(f"\033[{cursor_y};{cursor_x}H") # curser an koordinaten
 
@@ -292,7 +296,7 @@ class Tetris:
                 break
 
         self.recentlyspawned = True
-        def set_recentlyspawned_False():
+        def set_recentlyspawned_False(): # neu gespawnte steine sollen nicht direkt durch die clock fallen
             time.sleep(0.3)
             self.recentlyspawned = False
         thread = threading.Thread(target=set_recentlyspawned_False)
@@ -329,7 +333,7 @@ class Tetris:
             self.create_intersection_field()
             self.update_field()
         #self.testprint_field_form(self.falling_tetris_field)
-        self.score += 10
+        self.score += 10 # 10 punkte für neu gespawnten stein
         self.create_intersection_field()
         self.update_field()
 
@@ -366,11 +370,18 @@ class Tetris:
 
 
     def check_rows_for_delete(self):
+        multiplier = [0, 1, 3, 5, 8, 12, 17] # multiplikator für 0, 1, 2, 3, 4, 5, 6 Reihen
+        row_counter = 0 # zählt, wie viele Reihen auf einmal gelöscht werden
         for index, row in enumerate(self.existing_block_field):
-            if all(element in [1, 2, 3, 4, 5, 6, 7] for element in row): # alle elemente ein stein sind (also nicht einmal hintergrund), dann reihe löschen
+            #if all(element in [1, 2, 3, 4, 5, 6, 7] for element in row): # alle elemente ein stein sind (also nicht einmal hintergrund), dann reihe löschen
+            if all(element != 0 for element in row):
                 del self.existing_block_field[index] # reihe löschen
                 self.existing_block_field.insert(0, [0 for col in range(self.cols)])  # oben neue, leere Reihe hinzufügen
-                self.score += self.cols * 30
+                row_counter += 1
+
+        row_counter = min(row_counter, 6) # für den fall, dass es mehr als 6 reihen auf einmal sind (nur bei konfiguration möglich)
+        self.score += self.cols * 10 * multiplier[row_counter] # spalten (normal 10) * 10 * multiplikator je nach Reihen
+
 
     def move_down(self):
         backup = copy.deepcopy(self.falling_tetris_field)
