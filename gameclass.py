@@ -42,7 +42,10 @@ class Tetris:
         self.config_name = config_data['config-name']
 
         self.speed = config_data['speed']
-        self.game_mode = 'exp' if 'start-interval' in self.speed else 'level'
+        if type(self.speed) is int:
+            self.game_mode = 'constant'
+        else:
+            self.game_mode = 'exp' if 'start-interval' in self.speed else 'level'
         self.level = 1
 
 
@@ -127,20 +130,20 @@ class Tetris:
                     score_value = self.score / self.cols
                     if self.game_mode == 'exp': # exonentielle geschwindigkeitsabnahme
                         interval = self.speed['min-interval'] + (self.speed['start-interval'] - self.speed['min-interval']) * math.exp(-self.speed['k'] * score_value)
-                    else:
-                        #current_score_level = 0 # irgendwas mit self.level damit einfacher
+                    elif self.game_mode == 'level':
                         all_scores = list((self.speed).keys())
                         next_level_score = all_scores[self.level]
                         current_level_score = all_scores[self.level-1]
                         if score_value >= int(next_level_score):
                             self.level += 1
                             interval = self.speed[next_level_score][1]
-
                             self.update_level_info()
-
-
                         else:
                             interval = self.speed[current_level_score][1]
+                    elif self.game_mode == 'constant':
+                        interval = self.speed
+                    else:
+                        interval = 0.5 # wenn der wert in data beschädigt ist
 
                     time.sleep(interval)
                     if self.recentlyspawned is True: # wenn neu gespawnt, dann erstmal pause, nicht direkt runter

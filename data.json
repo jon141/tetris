@@ -122,6 +122,48 @@
             "k": 0.02
         }
     },
+    "delete test": {
+        "rows": 20,
+        "cols": 10,
+        "symbol-background": "☺",
+        "symbol-tetris": "#",
+        "background-color": 3,
+        "forms": [
+            "I",
+            "Q",
+            "Ll",
+            "Lr",
+            "Zr",
+            "Zl",
+            "T"
+        ],
+        "highscore": 1270,
+        "config-name": "konfiguration",
+        "speed": {
+            "start-interval": 1.0,
+            "min-interval": 0.1,
+            "k": 0.02
+        }
+    },
+    "delete test 2": {
+        "rows": 20,
+        "cols": 10,
+        "symbol-background": "☺",
+        "symbol-tetris": "#",
+        "background-color": 3,
+        "forms": [
+            "I",
+            "Q",
+            "Ll",
+            "Lr",
+            "Zr",
+            "Zl",
+            "T"
+        ],
+        "highscore": 1270,
+        "config-name": "konfiguration",
+        "speed": 0.5
+    },
     "game-counter": 33,
     "gametime": 3692.186055421829
 }

@@ -28,11 +28,13 @@ def valid_choice():
         print("\033[H\033[J", end='')
         print('\033[32m')
         #print(asciiart.tetris)
-        print(colored_tetris_logo)
+        #print(colored_tetris_logo) # kann man machen, dann bleibt es bunt
+        print('\033[32m' + asciiart.tetris)
+
         print('\033[0m')
 
         print("""
-        Wähle aus, was du machen willst (1-7):
+        \033[34mWähle aus, was du machen willst (1-7):
             \033[31m1\033[0m Normales Spiel
             \033[31m2\033[0m Gespeicherte Konfiguration spielen
             \033[31m3\033[0m Konfiguration ansehen / Spiel konfigurieren 
@@ -40,9 +42,9 @@ def valid_choice():
             \033[31m5\033[0m Statistik / Informationen / Steuerung
             \033[31m6\033[0m Spielstand zurücksetzen
             \033[31m7\033[0m Spiel beenden
-                """)
+            """, end='')
 
-        choice = input('            \033[0m\033[39m') # setzt curserfarbe zurück
+        choice = input('\033[0m\033[39m') # setzt curserfarbe zurück
 
         if choice in ['1', '2', '3', '4', '5', '6', '7', 'b', 'q', '^[', '\x1b']:
             return choice
@@ -57,6 +59,7 @@ def gamestart(config_data):
 clear_console()
 print('\033[?25l') # curser verstecken
 colored_tetris_logo = animation.animation(asciiart.tetris, 0.01, 0, 'random') # Tetris Schriftzug erscheint zeichen für zeichen
+print('\033[32m' + asciiart.tetris)
 while True:
     print("\033[H\033[J", end='')
     choice = valid_choice()
@@ -88,7 +91,18 @@ Press enter to start the Game.''')
 
     elif choice == '3':
         print("\033[H\033[J", end='')
-        configuration.spiel_konfigurieren(forms, data)
+
+        forms = json.load(open('forms.json', 'r', encoding='utf-8'))
+        data = json.load(open('data.json', 'r', encoding='utf-8'))
+        while True:
+            forms = json.load(open('forms.json', 'r', encoding='utf-8'))
+            data = json.load(open('data.json', 'r', encoding='utf-8'))
+            finished = configuration.configuration_menu(forms, data)
+            if not finished:
+                clear_console()
+            else:
+                break
+
     elif choice == '4':
         addform.add_form(forms, asciiart.formen_hinzufuegen)
         print(forms)
