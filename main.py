@@ -49,11 +49,7 @@ def valid_choice():
 
 
 def gamestart(config_data):
-    tetris = gameclass.Tetris(rows=config_data['rows'], cols=config_data['cols'],
-                  background=config_data['symbol-background'],
-                  background_color=config_data['background-color'],
-                  foreground=config_data['symbol-tetris'], forms=forms,
-                  form_select=config_data['forms'])  # , placed_color=konfigurationsdaten["color-placed"])
+    tetris = gameclass.Tetris(config_data, forms)  # , placed_color=konfigurationsdaten["color-placed"])
 
     tetris.start_game()
 

@@ -27,15 +27,23 @@ colors = [
 
 
 class Tetris:
-    def __init__(self, rows: int, cols: int, background: str, background_color: int, foreground: str, forms: dict, form_select: list):#, placed_color: str): #evtl. noch gamemode
+    def __init__(self, config_data: dict, forms: dict):#, placed_color: str): #evtl. noch gamemode
+
         # konfigurationsvariablen
-        self.rows = rows #Reihen
-        self.cols = cols # spalten
-        self.backgound = background # Symbol des Hintergrunds
-        self.backgound_color = background_color
-        self.foreground = foreground # Symbol des Vordergrunds -> also alle Tetris Steine, (Fallend und plaziert)
+        self.rows = config_data['rows'] #Reihen
+        self.cols = config_data['cols'] # spalten
+        self.backgound = config_data['symbol-background'] # Symbol des Hintergrunds
+        self.backgound_color = config_data['background-color']
+        self.foreground = config_data['symbol-tetris'] # Symbol des Vordergrunds -> also alle Tetris Steine, (Fallend und plaziert)
         self.forms = forms # alle Tetris Formen; Dictionary
-        self.form_select = form_select # auswahl der Formen aus Dictionary nach nummer
+        self.form_select = config_data['forms'] # auswahl der Formen aus Dictionary nach nummer
+        self.old_highscore = config_data['highscore']
+
+        self.config_name = config_data['config-name']
+
+        self.speed = config_data['speed']
+        self.game_mode = 'exp' if 'start-interval' in self.speed else 'level'
+        self.level = 1
 
 
         # Spielvariablen
@@ -63,18 +71,41 @@ class Tetris:
         self.tetris_form_cache = []
 
         # der cache soll sich dynamisch anpassen, wenn es mehr oder weniger steine im spiel gibt
-        self.form_cache_max = int(len(form_select)*0.72)         # 72 Prozent aller verschiedenen Steine; abgerundet auf eine ganze zahl -> bei regulären 7 steinen macht das 5
+        self.form_cache_max = int(len(self.form_select)*0.72)         # 72 Prozent aller verschiedenen Steine; abgerundet auf eine ganze zahl -> bei regulären 7 steinen macht das 5
 
         self.starttime = time.time()
 
     def update_gametime(self): # soll immer beim printen des intersection field aktualisiert werden
-        gametime = time.time() - self.starttime
-        sys.stdout.write("\033[3;1H")
-        sys.stdout.write(f"\033[33m{gametime:.0f}s\033[37m")  # überschreibt die Zeichen
+        coordinates = [5, 15] # zeile 5 zeichen 15
+        gametime_seconds = int(time.time() - self.starttime)
+
+        minutes = gametime_seconds // 60
+        seconds = gametime_seconds % 60
+
+        sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
+        sys.stdout.write(f"\033[33m\033[31m{minutes:02d}:{seconds:02d}\033[37m")  # überschreibt die Zeichen; immer 2 Stellen (02d); in rot
         sys.stdout.flush()
 
-        #sys.stdout.write("\033[999;0H")  # curser wieder nach unten
-        #sys.stdout.flush()
+    def update_scores_info(self):
+        coordinates_score = [7, 15]
+        coordinates_highscore = [4, 15]
+
+        sys.stdout.write(f"\033[{coordinates_highscore[0]};{coordinates_highscore[1]}H")
+        if self.score > self.old_highscore:
+            sys.stdout.write(f"\033[33m\033[31m{self.score}\033[37m")  # überschreibt die Zeichen; in rot
+        else:
+            sys.stdout.write(f"\033[33m\033[31m{self.old_highscore}\033[37m")  # überschreibt die Zeichen; in rot
+        sys.stdout.flush()
+
+        sys.stdout.write(f"\033[{coordinates_score[0]};{coordinates_score[1]}H")
+        sys.stdout.write(f"\033[33m\033[31m{self.score}\033[37m")  # überschreibt die Zeichen; in rot
+        sys.stdout.flush()
+
+    def update_level_info(self):
+        coordinates_level = [6, 15]
+        sys.stdout.write(f"\033[{coordinates_level[0]};{coordinates_level[1]}H")
+        sys.stdout.write(f"\033[33m\033[31m{self.level}\033[37m")  # überschreibt die Zeichen; in rot
+        sys.stdout.flush()
 
     def start_game(self):
 
@@ -85,25 +116,35 @@ class Tetris:
                 time.sleep(0.1)
 
         def clock():  # lässt die Steine FAllen, mit ansteigender fallgeschwindigkeit
-            # simulation mit Exponentiellem wachstum
-            start_interval = 1  # sekunden
-            interval_min = 0.15  # damit es nicht zu schnell wird, eine grenze
-            k = 0.00095  # proportionalitätskonstante
+            ## simulation mit Exponentiellem wachstum
+            #start_interval = 1  # sekunden
+            #interval_min = 0.15  # damit es nicht zu schnell wird, eine grenze
+            #k = 0.00095  # proportionalitätskonstante
+
 
             while not self.gameover:
                 if self.recentlyspawned is False and self.quit_game is False:
-                    x = self.score * k
-                    abnahme = -math.exp(x - 5.6) + start_interval
-                    if abnahme >= interval_min:
-                        interval = abnahme
+                    score_value = self.score / self.cols
+                    if self.game_mode == 'exp': # exonentielle geschwindigkeitsabnahme
+                        interval = self.speed['min-interval'] + (self.speed['start-interval'] - self.speed['min-interval']) * math.exp(-self.speed['k'] * score_value)
                     else:
-                        interval = interval_min
-                    # interval = 1.5 - Game.score
+                        #current_score_level = 0 # irgendwas mit self.level damit einfacher
+                        all_scores = list((self.speed).keys())
+                        next_level_score = all_scores[self.level]
+                        current_level_score = all_scores[self.level-1]
+                        if score_value >= int(next_level_score):
+                            self.level += 1
+                            interval = self.speed[next_level_score][1]
+
+                            self.update_level_info()
+
+
+                        else:
+                            interval = self.speed[current_level_score][1]
+
                     time.sleep(interval)
-                    # print(Game.recentlyspawned)
                     if self.recentlyspawned is True: # wenn neu gespawnt, dann erstmal pause, nicht direkt runter
                         time.sleep(1)
-                        # print('recently spawned true')
                     if self.quit_game is False and self.recentlyspawned is False:  # sonst kommt es zu einer Verzögerung und das spielfeld wird nach beenden des Spiels nochmal geprintet
                         self.move_down()
                 if self.quit_game is True or self.gameover:
@@ -172,15 +213,14 @@ class Tetris:
 
         new_highscore = False
 
-        if self.score > data['highscore']:
+        if self.score > self.old_highscore:
             new_highscore = True
-            data['highscore'] = self.score
+            data[self.config_name]['highscore'] = self.score
         game_time = time.time() - starttime - 2
         data['gametime'] += game_time
         data['game-counter'] += 1
         json.dump(data, open('data.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
 
-        self.clear_console()
         self.clear_console()
         self.print_field()
         #print(f'\033[31m{asciiart.gameover}\033[0m')
@@ -203,41 +243,56 @@ class Tetris:
     def create_empty_field(self): # erstelle eine Zweidimensionale Liste aus den angegebenen reihen und spalten: zb [ [0, 0, 0], [0, 0, 0], [0, 0, 0] ]
         return [[0 for col in range(self.cols)] for row in range(self.rows)]
 
+    def print_infobox(self):
+        box = '''┌───────────┐
+│\033[36mT E T R I S\033[37m│
+├───────────┴─────────┐
+│ \033[33mHighscore :         \033[37m│
+│ \033[33mZeit      : \033[31m00:00   \033[37m│
+│ \033[33mLevel     : \033[31m1       \033[37m│
+│ \033[33mScore     :         \033[37m│
+│                     │
+└─────────────────────┘'''
+
+        for index, line in enumerate(box.splitlines()):
+            sys.stdout.write(f"\033[{index+1};1H{line}")  # \033[Zeile;SpalteH
+        sys.stdout.flush()
+
+        self.update_scores_info()
+        self.update_level_info()
+
     def print_field(self):
-        frame_size = (self.cols * (1+len(self.backgound)) + 3) # optional *3, wenn unten zwei leerzeichen
-        margin_left = 14
+        frame_size = (self.cols * (1 + len(self.backgound)) + 3)  # optional *3, wenn unten zwei leerzeichen
+        margin_left = 24
 
-        field = f'''{20*'_'}
-\033[31m\033[1mT E T R I S   Score: {self.score}\033[0m
-{margin_left*' '+  "╔" + "═" * (frame_size-2) + "╗"}\n'''
+        field = f'''
 
-        for row in self.intersection_field: # für jede reihe im Feld der SChnittmenge
-            row_string = margin_left*' ' + '║ '    # wird erstmal ein Abstand zur linken seite und der Rahmen erstellt
-            for col in row:                 # für jeden Eintrag in der Reihe
-                #print(col)
-                if col in [1, 2, 3, 4, 5, 6, 7]: # wird geschaut, welche Farbe die Tetrissteine im Feld haben
-                    row_string += f"{colors[col-1]}{self.foreground} \033[0m"  # \033[44m  \033[0m
+{margin_left * ' ' + "┌" + "─" * (frame_size - 2) + "┐"}\n'''
 
+        for row in self.intersection_field:  # für jede reihe im Feld der Schnittmenge
+            row_string = margin_left * ' ' + '│ '  # wird erstmal ein Abstand zur linken seite und der Rahmen erstellt
+            for col in row:  # für jeden Eintrag in der Reihe
+                if col in [1, 2, 3, 4, 5, 6, 7]:  # wird geschaut, welche Farbe die Tetrissteine im Feld haben
+                    row_string += f"{colors[col - 1]}{self.foreground} \033[0m"
                 else:
-                    row_string += f"{colors[self.backgound_color]}{self.backgound} "  # außer der Eintrag ist nur Hintergrund
-            row_string += '\033[37m║' # RAhmen auf der anderen Seite schließen
-            #print(row_string)
-            field += f'{row_string}\n' # den String der reihe zum string des gesammten Feldes hinzufügen
+                    row_string += f"{colors[self.backgound_color]}{self.backgound} "  # Hintergrund
+            row_string += '\033[37m│'  # Rahmen auf der anderen Seite schließen
+            field += f'{row_string}\n'  # zum Gesamtsfeld hinzufügen
 
-        field += (margin_left*' '+ "╚" + "═" * (frame_size-2) + "╝")      # rahmen nach unten abschließen
+        field += (margin_left * ' ' + "└" + "─" * (frame_size - 2) + "┘")  # Rahmen nach unten abschließen
 
         print(field)
-        #if not self.gameover:
-        #    if not self.quit_game:
-        #        self.update_gametime()
+        self.update_scores_info()
+
+        self.print_infobox()
+
 
     def update_field(self): # auch score updaten
         # Score updaten:
-        sys.stdout.write("\033[2;22H") # score fängt in zeile 2 zeichen 22 an
-        sys.stdout.write(f"\033[31m{self.score:<5}")  # <5 -> Überschreiben alter Stellen # und rot
-        sys.stdout.flush()
+        self.update_scores_info()
 
-        margin_left = 14  #  Rand links
+
+        margin_left = 24  #  Rand links
         margin_top = 3
         background_width = len(self.backgound)
 
@@ -257,9 +312,12 @@ class Tetris:
 
         sys.stdout.flush()
 
+
         if not self.gameover:
            if not self.quit_game:
                self.update_gametime()
+
+
 
     def create_intersection_field(self):
         self.old_intersection_field = copy.deepcopy(self.intersection_field)  # aktuelles feld wird zum alten und neues wird erstellt
@@ -334,6 +392,13 @@ class Tetris:
             self.update_field()
         #self.testprint_field_form(self.falling_tetris_field)
         self.score += 10 # 10 punkte für neu gespawnten stein
+
+        threading.Thread(
+            target=self.show_score_update,
+            args=(10, 0.75, [8, 10]),  # Parameter weitergeben
+            daemon=True  # beendet sich mit dem Hauptprogramm
+        ).start()
+
         self.create_intersection_field()
         self.update_field()
 
@@ -368,6 +433,17 @@ class Tetris:
         else:
             pass
 
+    def show_score_update(self, score, t, coordinates):
+        #coordinates = [8, 4]
+        text = f'+{score}{3 * " "}'
+        sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
+        sys.stdout.write(f"\033[33m\033[31m{text}\033[37m")  # überschreibt die Zeichen; in rot
+        sys.stdout.flush()
+        time.sleep(t)
+        overwrite_text = len(text) * ' '
+        sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
+        sys.stdout.write(f"\033[33m\033[37m{overwrite_text}\033[37m")  # überschreibt die Zeichen; in rot
+        sys.stdout.flush()
 
     def check_rows_for_delete(self):
         multiplier = [0, 1, 3, 5, 8, 12, 17] # multiplikator für 0, 1, 2, 3, 4, 5, 6 Reihen
@@ -380,7 +456,15 @@ class Tetris:
                 row_counter += 1
 
         row_counter = min(row_counter, 6) # für den fall, dass es mehr als 6 reihen auf einmal sind (nur bei konfiguration möglich)
-        self.score += self.cols * 10 * multiplier[row_counter] # spalten (normal 10) * 10 * multiplikator je nach Reihen
+        add_score = self.cols * 10 * multiplier[row_counter] # spalten (normal 10) * 10 * multiplikator je nach Reihen
+        if add_score != 0:
+            self.score += add_score
+
+            threading.Thread(
+                target=self.show_score_update,
+                args=(add_score, 0.75, [8, 4]),  # Parameter weitergeben
+                daemon=True  # beendet sich mit dem Hauptprogramm
+            ).start()
 
 
     def move_down(self):
