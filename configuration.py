@@ -256,6 +256,8 @@ def configure_game(forms, data, config_name):
         data[config_name]['forms'] = form_choice_list
         data[config_name]['background-color'] = background_color
         data[config_name]['speed'] = speed
+        data[config_name]['config-name'] = config_name
+
 
         json.dump(data, open('data.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
 
@@ -322,7 +324,7 @@ def configuration_menu(forms, data):
 
                 configure_game(forms, data, config_name)
 
-                # return False
+                return False
 
         elif choice in break_options:  # direkt abbrechen
             print('break')

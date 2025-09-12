@@ -36,9 +36,9 @@ def valid_choice():
         print("""
         \033[34mWähle aus, was du machen willst (1-7):
             \033[31m1\033[0m Normales Spiel
-            \033[31m2\033[0m Gespeicherte Konfiguration spielen
-            \033[31m3\033[0m Konfiguration ansehen / Spiel konfigurieren 
-            \033[31m4\033[0m Neue Formen hinzugügen  
+            \033[31m2\033[0m Konfiguration spielen
+            \033[31m3\033[0m Konfigurationen erstellen / ansehen / bearbeiten 
+            \033[31m4\033[0m Neue Formen hinzufügen  
             \033[31m5\033[0m Statistik / Informationen / Steuerung
             \033[31m6\033[0m Spielstand zurücksetzen
             \033[31m7\033[0m Spiel beenden
@@ -61,14 +61,39 @@ print('\033[?25l') # curser verstecken
 colored_tetris_logo = animation.animation(asciiart.tetris, 0.01, 0, 'random') # Tetris Schriftzug erscheint zeichen für zeichen
 print('\033[32m' + asciiart.tetris)
 while True:
+
+    forms = json.load(open('forms.json', 'r', encoding='utf-8'))
+    data = json.load(open('data.json', 'r', encoding='utf-8'))
+
     print("\033[H\033[J", end='')
     choice = valid_choice()
     print("\033[A\033[K", end="")  # Eine Zeile nach oben und löschen
     #print('es kann weiter gehen')
     if choice == '1' or choice == '2':
-        #print('1')
-        print("\033[H\033[J", end='') # ziehe dein bildschirm so groß, bis du alle 4 Ecken siehst
-        #print_ramen(150, 30)
+        print("\033[H\033[J", end='') #
+
+        if choice == '1':
+            konfigurationsdaten = data['normal']
+
+        else:
+            print('\nWähle die Konfiguration aus.')
+            tab = 4*' '
+            c = 0  # stichpunktzähler
+            configuration_names = []
+            for name in data:
+                if name not in ('normal', 'gametime', 'game-counter'):
+                    c += 1
+                    print(
+                        f'{2 * tab}- \033[31m{c}\033[37m: "\033[33m{name}\033[37m"')
+                    configuration_names.append(name)
+
+            config_choice = input('> ')
+            try:
+                config_name = configuration_names[int(config_choice) - 1]
+            except:
+                config_name = configuration_names[0]
+            konfigurationsdaten = data[config_name]
+
         input('''
 Mach das Fenster ausreichend groß!!! 
 Spiel kann beendet werden, wenn b/q/ESC gedrückt wird.
@@ -81,11 +106,7 @@ Press enter to start the Game.''')
 
         clear_console()
 
-        if choice == '1':
-            konfigurationsdaten = data['normal']
 
-        else:
-            konfigurationsdaten = data['konfiguration']
 
         gamestart(konfigurationsdaten)
 
