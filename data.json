@@ -14,7 +14,7 @@
             "Zl",
             "T"
         ],
-        "highscore": 7280,
+        "highscore": 0,
         "config-name": "normal",
         "speed": {
             "0": [
@@ -99,7 +99,7 @@
             ]
         }
     },
-    "konfiguration": {
+    "konfiguration-1": {
         "rows": 20,
         "cols": 10,
         "symbol-background": "☺",
@@ -114,15 +114,15 @@
             "Zl",
             "T"
         ],
-        "highscore": 1270,
-        "config-name": "konfiguration",
+        "highscore": 0,
+        "config-name": "konfiguration-1",
         "speed": {
             "start-interval": 1.0,
             "min-interval": 0.1,
             "k": 0.02
         }
     },
-    "delete test": {
+    "konfiguration-2": {
         "rows": 20,
         "cols": 10,
         "symbol-background": "☺",
@@ -137,15 +137,15 @@
             "Zl",
             "T"
         ],
-        "highscore": 1270,
-        "config-name": "konfiguration",
+        "highscore": 0,
+        "config-name": "konfiguration-2",
         "speed": {
             "start-interval": 1.0,
             "min-interval": 0.1,
             "k": 0.02
         }
     },
-    "delete test 2": {
+    "konfiguration-3": {
         "rows": 20,
         "cols": 10,
         "symbol-background": "☺",
@@ -160,10 +160,10 @@
             "Zl",
             "T"
         ],
-        "highscore": 1270,
-        "config-name": "konfiguration",
+        "highscore": 0,
+        "config-name": "konfiguration-3",
         "speed": 0.5
     },
-    "game-counter": 33,
-    "gametime": 3692.186055421829
+    "game-counter": 0,
+    "gametime": 0
 }
