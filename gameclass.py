@@ -296,6 +296,7 @@ class Tetris:
 
 
         margin_left = 24  #  Rand links
+        start_left = margin_left + 3 # hier beginnt der erste hintergrundstein (einmal ramen einmal lücke, dann der stein)
         margin_top = 3
         background_width = len(self.backgound)
 
@@ -304,7 +305,7 @@ class Tetris:
                 if self.old_intersection_field[y][x] != col: # wenn das element nicht mit dem an der gleichen position im alten feld übereinstimmt, muss das feld an der stelle geupdatet werden
                     # Cursor positionieren
                     cursor_y = margin_top + (y+1) # +3 wegen abstand von oben (mit rahmen, Score usw); (y+1) weil erstes element index 0 hat, der curser aber mit koordinaten 1 | 1 anfängt
-                    cursor_x = margin_left + 1 + (x+1) * (1 + background_width)  # +1 wegen rahmen; (1 + background_width) wegen lücke und (x+1) weil das erste element index 0 hat
+                    cursor_x = start_left + x * (1 + background_width)  # +1 wegen rahmen; (1 + background_width) wegen lücke und (x+1) weil das erste element index 0 hat
 
                     sys.stdout.write(f"\033[{cursor_y};{cursor_x}H") # curser an koordinaten
 
