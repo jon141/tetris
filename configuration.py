@@ -52,6 +52,7 @@ def print_configuration(data, forms, config_name):
     values_dict = data[config_name]
     print(f'''\033[32m
 {config_name}           \033[0m
+    Highscore        : \033[31m{values_dict['highscore']}\033[0m
     Reihen           : \033[31m{values_dict['rows']}\033[0m
     Spalten          : \033[31m{values_dict['cols']}\033[0m
     Hintergrundsymbol: \033[31m{values_dict['symbol-background']}\033[0m
@@ -203,7 +204,7 @@ def configure_game(forms, data, config_name):
     print("\n\033[0mFallgeschwindigkeitsmodus wählen:")
     print("  \033[31m1\033[37m: Konstanter Wert")
     print("  \033[31m2\033[37m: Exponentiell (minimun, startwert, k-Proportionalitätsfaktor)")
-    print("  \033[31m3\033[37m: standart Levelsystem")
+    print("  \033[31m3\033[37m: standart Levelsystem (kann in data.json individuell angepasst werden)")
 
     while True:
         speed_choice = input("\033[0mModus wählen: \033[31m")
@@ -277,7 +278,7 @@ def configuration_menu(forms, data):
 
     tab = 4 * ' '  # abstand nach links
 
-    print(f'{tab}Zahl eingeben:')
+    print(f'{tab}Zahl eingeben. Zurück mit b/q/ESC:')
     print(f'{2 * tab}- \033[31m1\033[37m: \033[32mNeue Konfiguration\033[37m')
     print(f'{2 * tab}- \033[31m2\033[37m: \033[32mKonfiguration löschen\033[37m')
     c = 2  # stichpunktzähler

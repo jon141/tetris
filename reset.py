@@ -49,7 +49,7 @@ data_default = {
             "Zl",
             "T"
         ],
-        "highscore": 5840,
+        "highscore": 0.0,
         "config-name": "normal",
         "speed": {
         "0":  [1, 1.00],
