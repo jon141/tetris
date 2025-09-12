@@ -68,12 +68,14 @@ Formen:
         if name in values_dict['forms']:
             # print('\033[31m' + 15 * '_')
             print('\033[31m', end='')
+        else:
+            print('\033[33m', end='')
 
         print(number + 1, ':', name, '\033[37m')
         if name in values_dict['forms']:
             print_form(form, 3, values_dict['symbol-tetris'], values_dict['symbol-background'], 1, 3)
         else:
-            print_form(form, 3, '1', '0', 6, 6)
+            print_form(form, 3, '□', '·', 6, 6)
 
 
 def row_col_valid_checker(placeholder):
@@ -110,7 +112,9 @@ def form_choice_input(form_names):
 
 def configure_game(forms, data, config_name):
     # wenn name = False ist, dann wird das spiel neu erstellt und es muss ein neuer name gewählt werden. ist der name nicht false, also schon existent, muss beim speichern überschrieben werden und alte werte die nicht verändert werden wollen können beibelassen werden
-
+    #clear_console()
+    if config_name is False:
+        print("\033[33mNeue Konfiguration\n")
     # durch die is None abfrage bei jeder eingabe abbrechbar
     rows = row_col_valid_checker('Reihen')
     if rows is None:  # ist none, wenn abbruchbedingung ESC erfüllt ist
@@ -243,6 +247,7 @@ def configure_game(forms, data, config_name):
     if not config_name:
         config_name = input(
             'Gib deiner Konfiguration einen Namen. (existiert ein Name schon, wird die zugehörige Konfiguration überschrieben.): ')
+        data[config_name] = {}
 
     bestaetigung = input('Bestätige deine Konfiguration, oder breche ab mit b/q/ESC ab. ')
     print('\033[?25l', end='')
@@ -250,6 +255,7 @@ def configure_game(forms, data, config_name):
     if bestaetigung in ('b', '\x1b', 'q', '^['):
         return None
     else:
+
         data[config_name]['rows'] = rows
         data[config_name]['cols'] = cols
         data[config_name]['symbol-tetris'] = tetris_symbol
@@ -258,6 +264,7 @@ def configure_game(forms, data, config_name):
         data[config_name]['background-color'] = background_color
         data[config_name]['speed'] = speed
         data[config_name]['config-name'] = config_name
+        data[config_name]['highscore'] = 0
 
 
         json.dump(data, open('data.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
@@ -297,8 +304,7 @@ def configuration_menu(forms, data):
             # dann konfiguration anzeigen
             if choice == '1':
                 configure_game(forms, data, False)
-                # neue konfiguration erstellen starten
-                # pass
+                return False
             elif choice == '2':
                 # Konfiguration löschen
                 delete_last_lines(1)

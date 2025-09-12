@@ -42,7 +42,7 @@ class Tetris:
         self.config_name = config_data['config-name']
 
         self.speed = config_data['speed']
-        if type(self.speed) is int:
+        if type(self.speed) in (int, float):
             self.game_mode = 'constant'
         else:
             self.game_mode = 'exp' if 'start-interval' in self.speed else 'level'
@@ -367,11 +367,12 @@ class Tetris:
 
         while True: # immer letzte 5 formen werden als cache gespeichert, damit eine farbe nicht mehrmals hintereinander kommt
             form_choice = random.choice(self.form_select)
-            if form_choice not in self.tetris_form_cache:
-                if len(self.tetris_form_cache) > self.form_cache_max - 1:
-                    self.tetris_form_cache.pop(0)
-                self.tetris_form_cache.append(form_choice)
-                break
+            if self.form_cache_max > 0: # für den fall, dass nur ein teil ausgewählt wurde und der cachemax somit 0 wäre -> dann funktionniert pop nicht und das ganze macht dann ja auch keinen sinn
+                if form_choice not in self.tetris_form_cache:
+                    if len(self.tetris_form_cache) > self.form_cache_max - 1:
+                        self.tetris_form_cache.pop(0)
+                    self.tetris_form_cache.append(form_choice)
+                    break
         #random_form = random.choice(self.form_select) #Zufälligen Formnamen aus Auswahl auswählen
 
         tetris_form = self.forms[form_choice] # Matrix der Form aus dem Dict hohlen

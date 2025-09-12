@@ -1,4 +1,7 @@
 import json
+import time
+
+
 def get_form_input():
     print('''
 Gib deine neue Form ein:
@@ -47,21 +50,23 @@ Deine Eingabe: \n\033[31m''')
 
 
 def form_gueltig_machen(form_list):
-    #longest_row = 0
-    #for row in form_list:
-    #    if len(row) > longest_row:
-    #        longest_row = len(row)
 
-    longest_row = max(len(row) for row in form_list)
+    try:
+        longest_row = max(len(row) for row in form_list)
 
-    for row_ in form_list:
-        difference = longest_row - len(row_)
-        #print(difference)
-        row_.extend([0] * difference) # reihen mit 0 auffüllen, bis alle gleichlang sind
+        for row_ in form_list:
+            difference = longest_row - len(row_)
+            #print(difference)
+            row_.extend([0] * difference) # reihen mit 0 auffüllen, bis alle gleichlang sind
+
+        return form_list
+
+    except:
+        print('Ungültige Eingabe.')
+        return False
 
 
 
-    return form_list
 
 
 def add_form(forms, formen_hinzufuegen_text):
@@ -79,23 +84,24 @@ def add_form(forms, formen_hinzufuegen_text):
             break
 
     form_list = form_gueltig_machen(form_list)
+    if form_list != False:
+        print("\nDeine eingegebene Form:")
+        for row in form_list:
+            s = ''
+            for element in row:
+                s += f'{str(element)}  '
+            print(s)
 
-    print("\nDeine eingegebene Form:")
-    for row in form_list:
-        s = ''
-        for element in row:
-            s += f'{str(element)}  '
-        print(s)
+        while True:
+            name = input("\nGib einen Namen für die Form ein und drücke Enter (Abbruch mit ., oder ESC): ")
+            if name in ('.', '^[', '\x1b'):
+                break
+            if name in forms:
+                print("Der Name existiert bereits. Bitte wähle einen anderen. Bereits existierende kannst du in Punkt 3 anschauen.")
+            else:
+                forms[name] = form_list
+                json.dump(forms, open('forms.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
 
-    while True:
-        name = input("\nGib einen Namen für die Form ein und drücke Enter (Abbruch mit ., oder ESC): ")
-        if name in ('.', '^[', '\x1b'):
-            break
-        if name in forms:
-            print("Der Name existiert bereits. Bitte wähle einen anderen. Bereits existierende kannst du in Punkt 3 anschauen.")
-        else:
-            forms[name] = form_list
-            json.dump(forms, open('forms.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
-
-            print(f"Die Form '{name}' wurde erfolgreich hinzugefügt!")
-            break
+                print(f"\nDie Form '{name}' wurde erfolgreich hinzugefügt!")
+                time.sleep(1)
+                break

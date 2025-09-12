@@ -86,12 +86,16 @@ while True:
                     print(
                         f'{2 * tab}- \033[31m{c}\033[37m: "\033[33m{name}\033[37m"')
                     configuration_names.append(name)
+            print(configuration_names)
 
             config_choice = input('> ')
             try:
                 config_name = configuration_names[int(config_choice) - 1]
-            except:
-                config_name = configuration_names[0]
+            except (ValueError, IndexError):
+                print('Es kam zu einem Fehler – es wird ein normales Spiel gestartet.')
+                time.sleep(2)
+                config_name = 'normal'
+
             konfigurationsdaten = data[config_name]
 
         input('''
