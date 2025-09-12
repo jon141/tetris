@@ -9,7 +9,7 @@ def print_statistics(data, asciiart):
 \033[32m
 {asciiart.statistik}
 \033[0m                                 
-        Highscore (normal):   \033[31m{data['highscore']}\033[0m
+        Highscore (normal):   \033[31m{data['normal']['highscore']}\033[0m
         Gespielte Spiele  :   \033[31m{data['game-counter']}\033[0m
         Spielzeit in min  :   \033[31m{data['gametime']//60}\033[0m
 
