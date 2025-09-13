@@ -127,11 +127,6 @@ class Tetris:
                 time.sleep(0.1)
 
         def clock():  # lässt die Steine FAllen, mit ansteigender fallgeschwindigkeit
-            ## simulation mit Exponentiellem wachstum
-            #start_interval = 1  # sekunden
-            #interval_min = 0.15  # damit es nicht zu schnell wird, eine grenze
-            #k = 0.00095  # proportionalitätskonstante
-
 
             while not self.gameover:
                 if self.recentlyspawned is False and self.quit_game is False:
@@ -161,28 +156,10 @@ class Tetris:
                 if self.quit_game is True or self.gameover:
                     break
 
-
-        # einrichung des spiels und der ausgabe
-        self.clear_console() # erst konsole frei macen
-        self.print_field() # leeres feld printen
-
-        time.sleep(2) # längere pause wegen start
-
-        self.starttime = time.time() # zeitzählung starten
-        gametime_clock_thread = threading.Thread(target=gametime_clock)
-        gametime_clock_thread.start()
-
-
-        self.spawn_tetris() # ersten stein spawnen
-        self.create_intersection_field()
-        self.update_field()
-
-
-
         def key_loop():
             with KeyboardInput() as kb:
                 while not self.gameover:  # Spiellogik: solange das spiel nicht verloren ist, oder nicht abgebrochen wurde
-                    if kb.kbhit():
+                    if kb.kbhit() and interaction_start:
                         key = kb.getch()
                         if key in ['a', 'A','\x1b[D']: # Left
                             self.move_left()
@@ -204,13 +181,33 @@ class Tetris:
                             self.print_field()   # erstellt das spielfeld neu auf der konsole
                     time.sleep(0.005)
 
+        # einrichung des spiels und der ausgabe
+        self.clear_console() # erst konsole frei macen
+        self.print_field() # leeres feld printen
+
+        interaction_start = False
+
         # Threads definieren: falling clock und keyinput
         clock_thread = threading.Thread(target=clock)
         key_loop_thread = threading.Thread(target=key_loop)
 
+        key_loop_thread.start() # keyloop früher startenstarten, damit bei verfrühter eingabe nichts kommt
+
+        time.sleep(2) # längere pause wegen start
+        interaction_start = True
+
+        self.starttime = time.time() # zeitzählung starten
+        gametime_clock_thread = threading.Thread(target=gametime_clock)
+        gametime_clock_thread.start()
+
+
+        self.spawn_tetris() # ersten stein spawnen
+        self.create_intersection_field()
+        self.update_field()
+
         #Starten
         clock_thread.start()  # starten
-        key_loop_thread.start() #  starten
+        #key_loop_thread.start() #  starten
 
         # Warten bis Threads fertig sind
         clock_thread.join()
