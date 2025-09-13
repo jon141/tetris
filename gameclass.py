@@ -78,43 +78,51 @@ class Tetris:
 
         self.starttime = time.time()
 
+        # wenn mehrere threads und das hauptprogramm gleichzeitig den curser bewegen und das spielfeld überschreiben
+        # kommt es manchmal zu komplikationen, was Geistersteine erzeugt (steine die im spielfeld beim überschreiben 'vergessen' werden und in der luft hängen bleiben, obwohl sie im spiel gar nicht existieren)
+        # jedes mal, wenn irgendwo was überschrieben wird, sollen die threads blockiert werden
+        self.overwrite_lock = threading.Lock()
+
+
     def update_gametime(self): # soll immer beim printen des intersection field aktualisiert werden
         coordinates = [5, 15] # zeile 5 zeichen 15
         gametime_seconds = int(time.time() - self.starttime)
 
         minutes = gametime_seconds // 60
         seconds = gametime_seconds % 60
-
-        sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
-        sys.stdout.write(f"\033[33m\033[31m{minutes:02d}:{seconds:02d}\033[37m")  # überschreibt die Zeichen; immer 2 Stellen (02d); in rot
-        sys.stdout.flush()
+        with self.overwrite_lock:
+            sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
+            sys.stdout.write(f"\033[33m\033[31m{minutes:02d}:{seconds:02d}\033[37m")  # überschreibt die Zeichen; immer 2 Stellen (02d); in rot
+            sys.stdout.flush()
 
     def update_scores_info(self):
         coordinates_score = [7, 15]
         coordinates_highscore = [4, 15]
 
-        sys.stdout.write(f"\033[{coordinates_highscore[0]};{coordinates_highscore[1]}H")
-        if self.score > self.old_highscore:
-            sys.stdout.write(f"\033[33m\033[31m{self.score}\033[37m")  # überschreibt die Zeichen; in rot
-        else:
-            sys.stdout.write(f"\033[33m\033[31m{self.old_highscore}\033[37m")  # überschreibt die Zeichen; in rot
-        sys.stdout.flush()
+        with self.overwrite_lock:
+            sys.stdout.write(f"\033[{coordinates_highscore[0]};{coordinates_highscore[1]}H")
+            if self.score > self.old_highscore:
+                sys.stdout.write(f"\033[33m\033[31m{self.score}\033[37m")  # überschreibt die Zeichen; in rot
+            else:
+                sys.stdout.write(f"\033[33m\033[31m{self.old_highscore}\033[37m")  # überschreibt die Zeichen; in rot
+            sys.stdout.flush()
 
-        sys.stdout.write(f"\033[{coordinates_score[0]};{coordinates_score[1]}H")
-        sys.stdout.write(f"\033[33m\033[31m{self.score}\033[37m")  # überschreibt die Zeichen; in rot
-        sys.stdout.flush()
+            sys.stdout.write(f"\033[{coordinates_score[0]};{coordinates_score[1]}H")
+            sys.stdout.write(f"\033[33m\033[31m{self.score}\033[37m")  # überschreibt die Zeichen; in rot
+            sys.stdout.flush()
 
     def update_level_info(self):
         coordinates_level = [6, 15]
-        sys.stdout.write(f"\033[{coordinates_level[0]};{coordinates_level[1]}H")
-        sys.stdout.write(f"\033[33m\033[31m{self.level}\033[37m")  # überschreibt die Zeichen; in rot
-        sys.stdout.flush()
+        with self.overwrite_lock:
+            sys.stdout.write(f"\033[{coordinates_level[0]};{coordinates_level[1]}H")
+            sys.stdout.write(f"\033[33m\033[31m{self.level}\033[37m")  # überschreibt die Zeichen; in rot
+            sys.stdout.flush()
 
     def start_game(self):
 
 
         def gametime_clock():
-            while not self.gameover:
+            while not self.gameover and not self.quit_game:
                 self.update_gametime()
                 time.sleep(0.1)
 
@@ -157,6 +165,7 @@ class Tetris:
         # einrichung des spiels und der ausgabe
         self.clear_console() # erst konsole frei macen
         self.print_field() # leeres feld printen
+
         time.sleep(2) # längere pause wegen start
 
         self.starttime = time.time() # zeitzählung starten
@@ -183,6 +192,8 @@ class Tetris:
                             self.rotate_tetris_in_falling_field()
                         elif key in ['s', 'S', '\x1b[B'] and self.recentlyspawned is False: # Down
                             self.move_down()
+                        elif key == ' ':
+                            self.quick_drop()
                         elif key in ['b', '\x1b', 'q']:  # ESC; b: break; q: quit
                             self.quit_game = True
                             self.gameover = True #???
@@ -226,15 +237,16 @@ class Tetris:
 
         self.clear_console()
         self.print_field()
+        self.update_gametime()
+
         #print(f'\033[31m{asciiart.gameover}\033[0m')
-        animation.animation(asciiart.gameover, 0.005, 5 + self.rows, 0)
+        animation.animation(asciiart.gameover,  time_per_char=0.005, row_position=5 + self.rows, color=0)
 
 
         if new_highscore:
             #print(f'\033[34m{asciiart.highscore}\033[0m')
-            animation.animation(asciiart.highscore, 0.005, 5 + self.rows + 7, 'random')
+            animation.animation(asciiart.highscore, time_per_char=0.005, row_position=5 + self.rows + 7, color='random')
 
-        self.update_gametime()
 
         # kurser wieder anch unten
         sys.stdout.write("\033[999;0H")
@@ -256,10 +268,10 @@ class Tetris:
 │ \033[33mScore     :         \033[37m│
 │                     │
 └─────────────────────┘'''
-
-        for index, line in enumerate(box.splitlines()):
-            sys.stdout.write(f"\033[{index+1};1H{line}")  # \033[Zeile;SpalteH
-        sys.stdout.flush()
+        with self.overwrite_lock:
+            for index, line in enumerate(box.splitlines()):
+                sys.stdout.write(f"\033[{index+1};1H{line}")  # \033[Zeile;SpalteH
+            sys.stdout.flush()
 
         self.update_scores_info()
         self.update_level_info()
@@ -284,7 +296,9 @@ class Tetris:
 
         field += (margin_left * ' ' + "└" + "─" * (frame_size - 2) + "┘")  # Rahmen nach unten abschließen
 
-        print(field)
+        with self.overwrite_lock:
+            print(field)
+
         self.update_scores_info()
 
         self.print_infobox()
@@ -307,20 +321,26 @@ class Tetris:
                     cursor_y = margin_top + (y+1) # +3 wegen abstand von oben (mit rahmen, Score usw); (y+1) weil erstes element index 0 hat, der curser aber mit koordinaten 1 | 1 anfängt
                     cursor_x = start_left + x * (1 + background_width)  # +1 wegen rahmen; (1 + background_width) wegen lücke und (x+1) weil das erste element index 0 hat
 
-                    sys.stdout.write(f"\033[{cursor_y};{cursor_x}H") # curser an koordinaten
+                    with self.overwrite_lock:
+                        sys.stdout.write(f"\033[{cursor_y};{cursor_x}H") # curser an koordinaten
 
-                    if col in [1, 2, 3, 4, 5, 6, 7]: # wird geschaut, welche Farbe der Stein hat und ov es einer ist
-                        sys.stdout.write(f"{colors[col - 1]}{self.foreground}\033[0m") # überschreiben
-                    else: # wenn kein stein, sondern Hintergrund
-                        sys.stdout.write(f"{colors[self.backgound_color]}{self.backgound}\033[0m")
+                        if col in [1, 2, 3, 4, 5, 6, 7]: # wird geschaut, welche Farbe der Stein hat und ov es einer ist
+                            sys.stdout.write(f"{colors[col - 1]}{self.foreground}\033[0m") # überschreiben
+                        else: # wenn kein stein, sondern Hintergrund
+                            sys.stdout.write(f"{colors[self.backgound_color]}{self.backgound}\033[0m")
 
-        sys.stdout.flush()
+                        sys.stdout.flush()
 
+        self.old_intersection_field = copy.deepcopy(self.intersection_field) # altes feld mit neuem ersetzen
 
         if not self.gameover:
            if not self.quit_game:
                self.update_gametime()
 
+    def quick_drop(self):
+        while True:
+            arrived = self.move_down()
+            if arrived: break
 
 
     def create_intersection_field(self):
@@ -441,14 +461,16 @@ class Tetris:
     def show_score_update(self, score, t, coordinates):
         #coordinates = [8, 4]
         text = f'+{score}{3 * " "}'
-        sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
-        sys.stdout.write(f"\033[33m\033[31m{text}\033[37m")  # überschreibt die Zeichen; in rot
-        sys.stdout.flush()
+        with self.overwrite_lock:
+            sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
+            sys.stdout.write(f"\033[33m\033[31m{text}\033[37m")  # überschreibt die Zeichen; in rot
+            sys.stdout.flush()
         time.sleep(t)
-        overwrite_text = len(text) * ' '
-        sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
-        sys.stdout.write(f"\033[33m\033[37m{overwrite_text}\033[37m")  # überschreibt die Zeichen; in rot
-        sys.stdout.flush()
+        with self.overwrite_lock:
+            overwrite_text = len(text) * ' '
+            sys.stdout.write(f"\033[{coordinates[0]};{coordinates[1]}H")
+            sys.stdout.write(f"\033[33m\033[37m{overwrite_text}\033[37m")  # überschreibt die Zeichen; in rot
+            sys.stdout.flush()
 
     def check_rows_for_delete(self):
         multiplier = [0, 1, 3, 5, 8, 12, 17] # multiplikator für 0, 1, 2, 3, 4, 5, 6 Reihen
@@ -488,10 +510,12 @@ class Tetris:
             self.coordinates[1] += 1 #y-koordinate um 1 erhöhen
             self.create_intersection_field()
             self.update_field()
+            return False
         else:
             self.falling_tetris_field = backup
             #print('unten angekommen, oder überschneidung: Feld der exestierenden Blöcke muss erweitert werden.')
             self.expand_existing_block_field(True)
+            return True # wenn es unten angekommen ist; wichtig für quickdrop
 
         #self.testprint_field_form(self.falling_tetris_field)
         #print('')

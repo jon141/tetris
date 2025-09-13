@@ -6,6 +6,10 @@ def print_statistics(data, asciiart):
           \033[31m🡅\033[0m           rotate \033[31m🡅\033[0m           /   \033[31mw\033[0m       
         \033[31m🡄\033[0m \033[31m🡇\033[0m \033[31m🡆\033[0m    \033[31m🡄\033[0m left down \033[31m🡇\033[0m right \033[31m🡆\033[0m  /  \033[31ma\033[0m \033[31ms\033[0m \033[31md\033[0m 
         
+        Quickdrop:\033[31m Leertaste\033[0m
+        
+        Spiel beenden:\033[31m q/b/ESC\033[0m
+        
 \033[32m
 {asciiart.statistik}
 \033[0m                                 
@@ -21,5 +25,5 @@ def print_statistics(data, asciiart):
 
                        
                 
-(Press enter to go back)
+(Enter um zurückzugehen.)
     ''')

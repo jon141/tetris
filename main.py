@@ -39,7 +39,7 @@ def valid_choice():
             \033[31m2\033[0m Konfiguration spielen
             \033[31m3\033[0m Konfigurationen erstellen / ansehen / bearbeiten 
             \033[31m4\033[0m Neue Formen hinzufügen  
-            \033[31m5\033[0m Statistik / Informationen / Steuerung
+            \033[31m5\033[0m Steuerung / Statistik / Informationen 
             \033[31m6\033[0m Spielstand zurücksetzen
             \033[31m7\033[0m Spiel beenden
             """, end='')
@@ -86,33 +86,38 @@ while True:
                     print(
                         f'{2 * tab}- \033[31m{c}\033[37m: "\033[33m{name}\033[37m"')
                     configuration_names.append(name)
-            print(configuration_names)
+            #print(configuration_names)
 
             config_choice = input('> ')
             try:
                 config_name = configuration_names[int(config_choice) - 1]
             except (ValueError, IndexError):
-                print('Es kam zu einem Fehler – es wird ein normales Spiel gestartet.')
-                time.sleep(2)
+                if config_choice not in ('b', 'q', '^[', '\x1b'):
+                    print('Es kam zu einem Fehler – es wird ein normales Spiel gestartet.')
+                    time.sleep(2)
                 config_name = 'normal'
+            if config_choice in ('b', 'q', '^[', '\x1b'): # abbrechbar mit bqESC
+                konfigurationsdaten = False
+            else:
+                konfigurationsdaten = data[config_name]
 
-            konfigurationsdaten = data[config_name]
-
-        input('''
+        if konfigurationsdaten:
+            start = input('''
 Mach das Fenster ausreichend groß!!! 
 Spiel kann beendet werden, wenn b/q/ESC gedrückt wird.
 Falls sich das Spielfeld durch Veränderung der Terminalgröße unbrauchbar wird, drücke 'r', um es neu zu laden
 
-Press enter to start the Game.''')
-        print("\033[H\033[J", end='')
-        print(f'\033[36m{asciiart.tetris_gamestart}\033[0m', end='')
-        time.sleep(1)
+Enter um zu starten; abbrechen mit b/q/ESC.
+''')
 
-        clear_console()
+            if start not in ('b', 'q', '^[', '\x1b'):
 
+                print("\033[H\033[J", end='')
+                print(f'\033[36m{asciiart.tetris_gamestart}\033[0m', end='')
+                time.sleep(1)
+                clear_console()
 
-
-        gamestart(konfigurationsdaten)
+                gamestart(konfigurationsdaten)
 
     elif choice == '3':
         print("\033[H\033[J", end='')

@@ -1,41 +1,7 @@
-
 import time
 import random
 
-def animation2(text, time_per_char): # zeichen für zeichen
-
-    colors = [
-        "\033[31m",
-        "\033[32m",
-        "\033[33m",
-        "\033[34m",
-        "\033[35m",
-        "\033[36m",
-        "\033[37m"
-    ]
-
-    lines = text.splitlines()
-    # Konsole löschen
-    #print("\033[H\033[J", end="")
-    # Cursor verstecken
-    print("\033[?25l", end="")
-
-    logo = '\033[32m' # grün
-
-    # für jede zeile, wird jedes zeichen zu logo hinzugefügt und geprintet
-    for line in lines:
-        for ch in line:
-            logo += f'{random.choice(colors)}{ch}'
-            print("\033[H", end="")
-            print(logo)
-            if ch != ' ':
-                time.sleep(time_per_char)
-        logo += '\n'
-
-    print("\033[37m")
-    return logo
-
-def animation(text, time_per_char, row_position, color): # zeichen für zeichen
+def animation(text, time_per_char=0.01, row_position=1, color='random'): # zeichen für zeichen
 
     colors = [
         "\033[31m",  # rot
@@ -48,31 +14,25 @@ def animation(text, time_per_char, row_position, color): # zeichen für zeichen
     ]
 
     lines = text.splitlines()
-    # Konsole löschen
-    #print("\033[H\033[J", end="")
+
     # Cursor verstecken
     print("\033[?25l", end="")
 
     if color != 'random':
-        logo = f'{colors[min(color, 6)]}' # ganzes logo in einer farbe
-    else:
-        logo = ''
+        print(f'{colors[min(color, 6)]}') # ganzes logo in einer farbe
+
+    print(f"\033[{row_position};0H", end="", flush=True)  # in richtige reihe gehen
 
     # für jede zeile, wird jedes zeichen zu logo hinzugefügt und geprintet
     for line in lines:
         for ch in line:
             if color == 'random':
-                logo += f'{random.choice(colors)}{ch}'
+                print(f'{random.choice(colors)}{ch}', end='', flush=True)
             else:
-                logo += ch
-            #print("\033[H", end="")
-            #print(logo)
-
-            print(f"\033[{row_position};0H{logo}", end="", flush=True) # setzt curser wieder
-
+                print(f'{ch}', end='', flush=True)
             if ch != ' ':
                 time.sleep(time_per_char)
-        logo += '\n'
 
-    print("\033[37m")
-    return logo
+        print('\n', end='', flush=True)
+
+    print("\033[37m") # curser wirder weiß
