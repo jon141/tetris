@@ -51,9 +51,12 @@ def valid_choice():
 
 
 def gamestart(config_data):
-    tetris = gameclass.Tetris(config_data, forms)  # , placed_color=konfigurationsdaten["color-placed"])
+    try:
+        tetris = gameclass.Tetris(config_data, forms)  # , placed_color=konfigurationsdaten["color-placed"])
 
-    tetris.start_game()
+        tetris.start_game()
+    except:
+        print('Es ist ein unerwarteter Fehler aufgetreten. Überprüfe die Konfiguration auf Gültigkeit')
 
 
 clear_console()

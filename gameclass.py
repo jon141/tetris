@@ -170,7 +170,7 @@ class Tetris:
                         elif key in ['s', 'S', '\x1b[B'] and self.recentlyspawned is False: # Down
                             self.move_down()
                         elif key == ' ':
-                            self.quick_drop()
+                            self.instant_drop()
                         elif key in ['b', '\x1b', 'q']:  # ESC; b: break; q: quit
                             self.quit_game = True
                             self.gameover = True #???
@@ -334,7 +334,7 @@ class Tetris:
            if not self.quit_game:
                self.update_gametime()
 
-    def quick_drop(self):
+    def instant_drop(self):
         while True:
             arrived = self.move_down()
             if arrived: break
@@ -512,7 +512,7 @@ class Tetris:
             self.falling_tetris_field = backup
             #print('unten angekommen, oder überschneidung: Feld der exestierenden Blöcke muss erweitert werden.')
             self.expand_existing_block_field(True)
-            return True # wenn es unten angekommen ist; wichtig für quickdrop
+            return True # wenn es unten angekommen ist; wichtig für instantdrop
 
         #self.testprint_field_form(self.falling_tetris_field)
         #print('')
