@@ -99,12 +99,12 @@
             ]
         }
     },
-    "konfiguration-1": {
-        "rows": 20,
-        "cols": 10,
-        "symbol-background": "☺",
-        "symbol-tetris": "#",
-        "background-color": 3,
+    "Custom-Tetris-1": {
+        "rows": 23,
+        "cols": 13,
+        "symbol-background": "·",
+        "symbol-tetris": "@",
+        "background-color": 6,
         "forms": [
             "I",
             "Q",
@@ -112,22 +112,120 @@
             "Lr",
             "Zr",
             "Zl",
-            "T"
+            "T",
+            "2x3",
+            "5er",
+            "1er",
+            "2er",
+            "4",
+            "bar-code",
+            "berge"
         ],
         "highscore": 0,
-        "config-name": "konfiguration-1",
+        "config-name": "Custom-Tetris-1",
         "speed": {
-            "start-interval": 1.0,
-            "min-interval": 0.1,
-            "k": 0.02
+            "0": [
+                1,
+                1.0
+            ],
+            "17": [
+                2,
+                0.9
+            ],
+            "30": [
+                3,
+                0.82
+            ],
+            "40": [
+                4,
+                0.74
+            ],
+            "70": [
+                5,
+                0.67
+            ],
+            "110": [
+                6,
+                0.6
+            ],
+            "160": [
+                7,
+                0.54
+            ],
+            "220": [
+                8,
+                0.48
+            ],
+            "290": [
+                9,
+                0.43
+            ],
+            "370": [
+                10,
+                0.39
+            ],
+            "460": [
+                11,
+                0.35
+            ],
+            "560": [
+                12,
+                0.31
+            ],
+            "670": [
+                13,
+                0.28
+            ],
+            "790": [
+                14,
+                0.25
+            ],
+            "920": [
+                15,
+                0.22
+            ],
+            "1060": [
+                16,
+                0.2
+            ],
+            "1210": [
+                17,
+                0.18
+            ],
+            "1370": [
+                18,
+                0.16
+            ],
+            "1540": [
+                19,
+                0.14
+            ],
+            "1720": [
+                20,
+                0.12
+            ]
         }
     },
-    "konfiguration-2": {
+    "Annoying-Tetris": {
+        "rows": 25,
+        "cols": 18,
+        "symbol-background": "0",
+        "symbol-tetris": "1",
+        "background-color": 3,
+        "forms": [
+            "1er",
+            "2er"
+        ],
+        "highscore": 0,
+        "config-name": "Annoying-Tetris",
+        "speed": 1
+    },
+    "Unspielbar": {
         "rows": 20,
         "cols": 10,
-        "symbol-background": "☺",
-        "symbol-tetris": "#",
-        "background-color": 3,
+        "symbol-background": "·",
+        "symbol-tetris": "□",
+        "background-color": 0,
         "forms": [
             "I",
             "Q",
@@ -138,32 +236,13 @@
             "T"
         ],
         "highscore": 0,
-        "config-name": "konfiguration-2",
+        "config-name": "Unspielbar",
         "speed": {
             "start-interval": 1.0,
-            "min-interval": 0.1,
-            "k": 0.02
+            "min-interval": 0.05,
+            "k": 0.1
         }
-    },
-    "konfiguration-3": {
-        "rows": 20,
-        "cols": 10,
-        "symbol-background": "☺",
-        "symbol-tetris": "#",
-        "background-color": 3,
-        "forms": [
-            "I",
-            "Q",
-            "Ll",
-            "Lr",
-            "Zr",
-            "Zl",
-            "T"
-        ],
-        "highscore": 0,
-        "config-name": "konfiguration-3",
-        "speed": 0.5
     },
     "game-counter": 0,
-    "gametime": 0
+    "gametime": 0.0
 }

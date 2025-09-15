@@ -15,7 +15,7 @@ from keyboard_input import KeyboardInput
 ###data = json.load(open('data.json', 'r', encoding='utf-8'))
 
 # Idee: Farben nicht komplett random, nie 2x die gleiche, oder wenn eine Farbe kommt muss mind 2x eine andere kommen (speicherung in liste mit letzte 2 Farben)
-colors = [ 
+colors = [
             "\033[31m",
             "\033[32m",
             "\033[33m",
