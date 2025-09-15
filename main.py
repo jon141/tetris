@@ -41,7 +41,7 @@ def valid_choice():
             \033[31m4\033[0m Neue Formen hinzufügen  
             \033[31m5\033[0m Steuerung / Statistik / Informationen 
             \033[31m6\033[0m Spielstand zurücksetzen
-            \033[31m7\033[0m Spiel beenden
+            \033[31m7\033[0m Spiel beenden (7/b/q/ESC)
             """, end='')
 
         choice = input('\033[0m\033[39m') # setzt curserfarbe zurück

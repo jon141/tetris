@@ -436,34 +436,35 @@ class Tetris:
 
 
     def rotate_tetris_in_falling_field(self): ### !!!Wichtig: es darf nur rotiert werden, wenn nach rechts und unten noch genug Platz ist
-        x_position, y_position = self.coordinates # Koordinaten im falling field
-        #print(x_position, y_position)
-        form_name, rotation_level = self.form_rotation_level
+        with self.gamestate_changelock:
 
-        tetris_to_insert = self.rotate_form(form_name, rotation_level+1) # der Tetris stein, mit rotierter form
+            x_position, y_position = self.coordinates # Koordinaten im falling field
+            #print(x_position, y_position)
+            form_name, rotation_level = self.form_rotation_level
 
-        new_falling_tetris_field = self.create_empty_field()
+            tetris_to_insert = self.rotate_form(form_name, rotation_level+1) # der Tetris stein, mit rotierter form
 
-        widht = len(tetris_to_insert[0])
-        height = len(tetris_to_insert)
+            new_falling_tetris_field = self.create_empty_field()
+
+            widht = len(tetris_to_insert[0])
+            height = len(tetris_to_insert)
 
 
-        if (self.rows - y_position - height >= 0) and (self.cols - x_position - widht >= 0): # die erste bedingung schließt aus, dass der stein beim drehen nach ohen aus dem spielfeld rutscht, die zweite, ob das nach rechts passiert
-            for counter, row in enumerate(tetris_to_insert): # links oben ist Punkt 0|0
-                new_falling_tetris_field[counter + y_position][x_position:x_position + widht] = row     # der rotierte stein wird in ein neues falling field eingefügt
+            if (self.rows - y_position - height >= 0) and (self.cols - x_position - widht >= 0): # die erste bedingung schließt aus, dass der stein beim drehen nach ohen aus dem spielfeld rutscht, die zweite, ob das nach rechts passiert
+                for counter, row in enumerate(tetris_to_insert): # links oben ist Punkt 0|0
+                    new_falling_tetris_field[counter + y_position][x_position:x_position + widht] = row     # der rotierte stein wird in ein neues falling field eingefügt
 
-            if not self.check_for_ueberschneidung(self.existing_block_field, new_falling_tetris_field): # wenn es keine überschneidung gibt, ist drehung in ordnung und das feld kann übernommen werden
-                with self.gamestate_changelock:
+                if not self.check_for_ueberschneidung(self.existing_block_field, new_falling_tetris_field): # wenn es keine überschneidung gibt, ist drehung in ordnung und das feld kann übernommen werden
 
                     self.falling_tetris_field = new_falling_tetris_field
                     self.form_rotation_level[1] += 1
 
-                self.create_intersection_field()
-                self.update_field()
-            else:  # sonst soll nichts passieren
+                    self.create_intersection_field()
+                    self.update_field()
+                else:  # sonst soll nichts passieren
+                    pass
+            else:
                 pass
-        else:
-            pass
 
     def show_score_update(self, score, t, coordinates):
         #coordinates = [8, 4]
@@ -503,85 +504,82 @@ class Tetris:
 
 
     def move_down(self):
-        backup = copy.deepcopy(self.falling_tetris_field)
-        x_position, y_position = self.coordinates # Koordinaten im falling field
-        form_name, rotation_level = self.form_rotation_level
-        #widht = len(self.rotate_form(form_name, rotation_level)[0]) # höhe und Breite des Tetris
-        height = len(self.rotate_form(form_name, rotation_level))
-
         with self.gamestate_changelock:
+            backup = copy.deepcopy(self.falling_tetris_field)
+            x_position, y_position = self.coordinates # Koordinaten im falling field
+            form_name, rotation_level = self.form_rotation_level
+            #widht = len(self.rotate_form(form_name, rotation_level)[0]) # höhe und Breite des Tetris
+            height = len(self.rotate_form(form_name, rotation_level))
+
             del self.falling_tetris_field[-1] # unterste Reihe entfernen
             self.falling_tetris_field.insert(0, [0 for col in range(self.cols)]) #oben neue, leere Reihe hinzufügen
 
-        #Wenn noch Platz für eine Verschiebung gibt und es keine Kollision gibt
-        if (self.rows - y_position - height > 0) and self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field) == False:
-            with self.gamestate_changelock:
+            #Wenn noch Platz für eine Verschiebung gibt und es keine Kollision gibt
+            if (self.rows - y_position - height > 0) and self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field) == False:
                 self.coordinates[1] += 1  # y-koordinate um 1 erhöhen
 
-            self.create_intersection_field()
-            self.update_field()
-            return False
-        else:
-            with self.gamestate_changelock:
+                self.create_intersection_field()
+                self.update_field()
+                return False
+            else:
                 self.falling_tetris_field = backup
-            #print('unten angekommen, oder überschneidung: Feld der exestierenden Blöcke muss erweitert werden.')
-            self.expand_existing_block_field(True)
-            return True # wenn es unten angekommen ist; wichtig für instantdrop
+                #print('unten angekommen, oder überschneidung: Feld der exestierenden Blöcke muss erweitert werden.')
+                self.expand_existing_block_field(True)
+                return True # wenn es unten angekommen ist; wichtig für instantdrop
 
 
 
     def move_right(self):
-        x_position, y_position = self.coordinates
-        form_name, rotation_level = self.form_rotation_level
-        widht = len(self.rotate_form(form_name, rotation_level)[0]) # beim bewegen nach rechts ist wichtig, wie breit der fallende stein in der aktuellen drehung ist
+        with self.gamestate_changelock:
 
-        backup = copy.deepcopy(self.falling_tetris_field)
-        #print(widht, 'width')
-        if x_position < self.cols - widht:
+            x_position, y_position = self.coordinates
+            form_name, rotation_level = self.form_rotation_level
+            widht = len(self.rotate_form(form_name, rotation_level)[0]) # beim bewegen nach rechts ist wichtig, wie breit der fallende stein in der aktuellen drehung ist
 
-            with self.gamestate_changelock:
+            backup = copy.deepcopy(self.falling_tetris_field)
+            #print(widht, 'width')
+            if x_position < self.cols - widht:
+
                 for row in self.falling_tetris_field:
                     del row[-1]
                     row.insert(0, 0)
 
-            if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field):
-                with self.gamestate_changelock:
+                if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field):
                     self.falling_tetris_field = backup
-                #print('Geht nicht wegen übershneidung right')
-            else:
-                with self.gamestate_changelock:
+                    #print('Geht nicht wegen übershneidung right')
+                else:
                     self.coordinates[0] += 1
-                self.create_intersection_field()
-                self.update_field()
-        else:
-            pass
-            #print('Nicht genug Platz')
+                    self.create_intersection_field()
+                    self.update_field()
+            else:
+                pass
+                #print('Nicht genug Platz')
 
         #self.testprint_field_form(self.falling_tetris_field)
 
 
     def move_left(self):
-        x_position, y_position = self.coordinates
-        backup = copy.deepcopy(self.falling_tetris_field)
+        with self.gamestate_changelock:
 
-        if x_position != 0: # bei null gehts nicht weiter nach links
-            with self.gamestate_changelock:
+            x_position, y_position = self.coordinates
+
+            backup = copy.deepcopy(self.falling_tetris_field)
+
+            if x_position != 0: # bei null gehts nicht weiter nach links
                 for row in self.falling_tetris_field: #in jeder reihe von falling_tetris_field, das erste element löschen und rechts hinten einfügen -> verschiebt tetris stein nach links
                     del row[0]
                     row.append(0)
-            if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field): # wenn es eine überschneidung gibt, darf (kann) der Tetris stein nicht nach links bewegt werden
-                with self.gamestate_changelock:
+                if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field): # wenn es eine überschneidung gibt, darf (kann) der Tetris stein nicht nach links bewegt werden
                     self.falling_tetris_field = backup  # dann die verschiebung durch das backup rückgängig machen
 
-            else: # sonst die koordinaten verändern und das durch die änderung (verschiebung) entstandene Feld erstellen und ausgeben
-                with self.gamestate_changelock:
+                else: # sonst die koordinaten verändern und das durch die änderung (verschiebung) entstandene Feld erstellen und ausgeben
                     self.coordinates[0] -= 1
-                self.create_intersection_field()
-                self.update_field()
+                    self.create_intersection_field()
+                    self.update_field()
 
-        else:
-            pass
-            #print('nicht genug Platz')
+            else:
+                pass
+                #print('nicht genug Platz')
 
 
     def check_for_ueberschneidung(self, placed_field, falling_field): # auf englishc check for overlap
