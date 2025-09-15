@@ -82,7 +82,11 @@ class Tetris:
         # kommt es manchmal zu komplikationen, was Geistersteine erzeugt (steine die im spielfeld beim überschreiben 'vergessen' werden und in der luft hängen bleiben, obwohl sie im spiel gar nicht existieren)
         # jedes mal, wenn irgendwo was überschrieben wird, sollen die threads blockiert werden
         self.overwrite_lock = threading.Lock()
+        self.instant_drop_active = False
 
+        # immer dann verwenden, wenn die internen spielvariablen verändert werden, wie felder, uws, um gleichzeigiges zugreifen zu verhindern
+        # RLock (reentrant Lock) erlaubt im thread mehrfach den lock nehmen. Mit normalem lock blockiert es dann
+        self.gamestate_changelock = threading.RLock()
 
     def update_gametime(self): # soll immer beim printen des intersection field aktualisiert werden
         coordinates = [5, 15] # zeile 5 zeichen 15
@@ -151,7 +155,7 @@ class Tetris:
                     time.sleep(interval)
                     if self.recentlyspawned is True: # wenn neu gespawnt, dann erstmal pause, nicht direkt runter
                         time.sleep(1)
-                    if self.quit_game is False and self.recentlyspawned is False:  # sonst kommt es zu einer Verzögerung und das spielfeld wird nach beenden des Spiels nochmal geprintet
+                    if self.quit_game is False and self.recentlyspawned is False and self.instant_drop_active is False:  # sonst kommt es zu einer Verzögerung und das spielfeld wird nach beenden des Spiels nochmal geprintet
                         self.move_down()
                 if self.quit_game is True or self.gameover:
                     break
@@ -236,20 +240,18 @@ class Tetris:
         self.print_field()
         self.update_gametime()
 
-        #print(f'\033[31m{asciiart.gameover}\033[0m')
-        animation.animation(asciiart.gameover,  time_per_char=0.005, row_position=5 + self.rows, color=0)
+        with self.overwrite_lock:
+            animation.animation(asciiart.gameover,  time_per_char=0.005, row_position=5 + self.rows, color=0)
+            if new_highscore:
+                #print(f'\033[34m{asciiart.highscore}\033[0m')
+                animation.animation(asciiart.highscore, time_per_char=0.005, row_position=5 + self.rows + 7, color='random')
 
 
-        if new_highscore:
-            #print(f'\033[34m{asciiart.highscore}\033[0m')
-            animation.animation(asciiart.highscore, time_per_char=0.005, row_position=5 + self.rows + 7, color='random')
+            # kurser wieder anch unten
+            sys.stdout.write("\033[999;0H")
+            sys.stdout.flush()
 
-
-        # kurser wieder anch unten
-        sys.stdout.write("\033[999;0H")
-        sys.stdout.flush()
-
-        input("Enter zum beenden...")  # Bei Enter zurück zur Spielauswahl
+            input("Enter zum beenden...")  # Bei Enter zurück zur Spielauswahl
 
 
     def create_empty_field(self): # erstelle eine Zweidimensionale Liste aus den angegebenen reihen und spalten: zb [ [0, 0, 0], [0, 0, 0], [0, 0, 0] ]
@@ -335,27 +337,33 @@ class Tetris:
                self.update_gametime()
 
     def instant_drop(self):
+        self.instant_drop_active = True
         while True:
             arrived = self.move_down()
-            if arrived: break
+            if arrived:
+                self.instant_drop_active = False
+                break
 
 
     def create_intersection_field(self):
-        self.old_intersection_field = copy.deepcopy(self.intersection_field)  # aktuelles feld wird zum alten und neues wird erstellt
-        self.intersection_field = copy.deepcopy(self.existing_block_field)  # das intersection_field (schnittmenge) wird mit existing_block_field  (Plazierte steine feld) überschrieben (Deepcopy, weil sonst Doof)
-        for row_index, row in enumerate(self.falling_tetris_field):     # jede reihe im falling_tetris_field einzeln
-            for col_index, col in enumerate(row):
-                if col != 0:
-                    self.intersection_field[row_index][col_index] = self.current_color_index + 1
+        with self.gamestate_changelock:
+            self.old_intersection_field = copy.deepcopy(self.intersection_field)  # aktuelles feld wird zum alten und neues wird erstellt
+            self.intersection_field = copy.deepcopy(self.existing_block_field)  # das intersection_field (schnittmenge) wird mit existing_block_field  (Plazierte steine feld) überschrieben (Deepcopy, weil sonst Doof)
+            for row_index, row in enumerate(self.falling_tetris_field):     # jede reihe im falling_tetris_field einzeln
+                for col_index, col in enumerate(row):
+                    if col != 0:
+                        self.intersection_field[row_index][col_index] = self.current_color_index + 1
 
     def expand_existing_block_field(self, respawn):
-        for row_index, (row_1, row_2) in enumerate(zip(self.existing_block_field, self.falling_tetris_field)):
-            for col_index, (col_1, col_2) in enumerate(zip(row_1, row_2)):
-                if col_1 in [1, 2, 3, 4, 5, 6, 7]:
-                    self.existing_block_field[row_index][col_index] = col_1 # hier ist überlappungsfehler der farben
+        with self.gamestate_changelock:
 
-                elif col_2 == 1:
-                    self.existing_block_field[row_index][col_index] = self.current_color_index + 1 # hier ist überlappungsfehler der farben
+            for row_index, (row_1, row_2) in enumerate(zip(self.existing_block_field, self.falling_tetris_field)):
+                for col_index, (col_1, col_2) in enumerate(zip(row_1, row_2)):
+                    if col_1 in [1, 2, 3, 4, 5, 6, 7]:
+                        self.existing_block_field[row_index][col_index] = col_1 # hier ist überlappungsfehler der farben
+
+                    elif col_2 == 1:
+                        self.existing_block_field[row_index][col_index] = self.current_color_index + 1 # hier ist überlappungsfehler der farben
 
         if respawn:
             self.spawn_tetris() #?
@@ -394,26 +402,28 @@ class Tetris:
 
         tetris_form = self.forms[form_choice] # Matrix der Form aus dem Dict hohlen
 
-
-        self.form_rotation_level = [form_choice, 0] #Zufällig generierter Name der Form und Rotation-Status, der 0 ist
+        with self.gamestate_changelock:
+            self.form_rotation_level = [form_choice, 0] #Zufällig generierter Name der Form und Rotation-Status, der 0 ist
 
         widht = len(tetris_form[0]) # Breite der Tetris-Form
         x_position = (self.cols // 2) - (widht // 2)  # x-Postion für den Spawn soll in der Mitte des Feldes sein auf höhe 0
 
-        self.coordinates = [x_position, 0]
+        with self.gamestate_changelock:
+            self.coordinates = [x_position, 0]
+            self.falling_tetris_field = self.create_empty_field()
 
-        self.falling_tetris_field = self.create_empty_field()
-
-        for counter, row in enumerate(tetris_form):
-            self.falling_tetris_field[counter][x_position:x_position + widht] = row
+            for counter, row in enumerate(tetris_form):
+                self.falling_tetris_field[counter][x_position:x_position + widht] = row
 
         if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field): # wenn es beim spawn eine überschneidung gibt, ist das spiel vorbei
-            self.gameover = True
-            self.expand_existing_block_field(False)
+            with self.gamestate_changelock:
+                self.gameover = True
+                self.expand_existing_block_field(False)
             self.create_intersection_field()
             self.update_field()
-        #self.testprint_field_form(self.falling_tetris_field)
-        self.score += 10 # 10 punkte für neu gespawnten stein
+
+        with self.gamestate_changelock:
+            self.score += 10 # 10 punkte für neu gespawnten stein
 
         threading.Thread(
             target=self.show_score_update,
@@ -443,11 +453,11 @@ class Tetris:
                 new_falling_tetris_field[counter + y_position][x_position:x_position + widht] = row     # der rotierte stein wird in ein neues falling field eingefügt
 
             if not self.check_for_ueberschneidung(self.existing_block_field, new_falling_tetris_field): # wenn es keine überschneidung gibt, ist drehung in ordnung und das feld kann übernommen werden
-                self.falling_tetris_field = new_falling_tetris_field
+                with self.gamestate_changelock:
 
-                #self.testprint_field_form(self.falling_tetris_field)
+                    self.falling_tetris_field = new_falling_tetris_field
+                    self.form_rotation_level[1] += 1
 
-                self.form_rotation_level[1] += 1
                 self.create_intersection_field()
                 self.update_field()
             else:  # sonst soll nichts passieren
@@ -472,12 +482,13 @@ class Tetris:
     def check_rows_for_delete(self):
         multiplier = [0, 1, 3, 5, 8, 12, 17] # multiplikator für 0, 1, 2, 3, 4, 5, 6 Reihen
         row_counter = 0 # zählt, wie viele Reihen auf einmal gelöscht werden
-        for index, row in enumerate(self.existing_block_field):
-            #if all(element in [1, 2, 3, 4, 5, 6, 7] for element in row): # alle elemente ein stein sind (also nicht einmal hintergrund), dann reihe löschen
-            if all(element != 0 for element in row):
-                del self.existing_block_field[index] # reihe löschen
-                self.existing_block_field.insert(0, [0 for col in range(self.cols)])  # oben neue, leere Reihe hinzufügen
-                row_counter += 1
+        with self.gamestate_changelock:
+            for index, row in enumerate(self.existing_block_field):
+                #if all(element in [1, 2, 3, 4, 5, 6, 7] for element in row): # alle elemente ein stein sind (also nicht einmal hintergrund), dann reihe löschen
+                if all(element != 0 for element in row):
+                    del self.existing_block_field[index] # reihe löschen
+                    self.existing_block_field.insert(0, [0 for col in range(self.cols)])  # oben neue, leere Reihe hinzufügen
+                    row_counter += 1
 
         row_counter = min(row_counter, 6) # für den fall, dass es mehr als 6 reihen auf einmal sind (nur bei konfiguration möglich)
         add_score = self.cols * 10 * multiplier[row_counter] # spalten (normal 10) * 10 * multiplikator je nach Reihen
@@ -498,24 +509,25 @@ class Tetris:
         #widht = len(self.rotate_form(form_name, rotation_level)[0]) # höhe und Breite des Tetris
         height = len(self.rotate_form(form_name, rotation_level))
 
-        del self.falling_tetris_field[-1] # unterste Reihe entfernen
-        self.falling_tetris_field.insert(0, [0 for col in range(self.cols)]) #oben neue, leere Reihe hinzufügen
+        with self.gamestate_changelock:
+            del self.falling_tetris_field[-1] # unterste Reihe entfernen
+            self.falling_tetris_field.insert(0, [0 for col in range(self.cols)]) #oben neue, leere Reihe hinzufügen
 
         #Wenn noch Platz für eine Verschiebung gibt und es keine Kollision gibt
         if (self.rows - y_position - height > 0) and self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field) == False:
-            #print(self.rows - y_position - height)
-            self.coordinates[1] += 1 #y-koordinate um 1 erhöhen
+            with self.gamestate_changelock:
+                self.coordinates[1] += 1  # y-koordinate um 1 erhöhen
+
             self.create_intersection_field()
             self.update_field()
             return False
         else:
-            self.falling_tetris_field = backup
+            with self.gamestate_changelock:
+                self.falling_tetris_field = backup
             #print('unten angekommen, oder überschneidung: Feld der exestierenden Blöcke muss erweitert werden.')
             self.expand_existing_block_field(True)
             return True # wenn es unten angekommen ist; wichtig für instantdrop
 
-        #self.testprint_field_form(self.falling_tetris_field)
-        #print('')
 
 
     def move_right(self):
@@ -526,15 +538,19 @@ class Tetris:
         backup = copy.deepcopy(self.falling_tetris_field)
         #print(widht, 'width')
         if x_position < self.cols - widht:
-            for row in self.falling_tetris_field:
-                del row[-1]
-                row.insert(0, 0)
-            #print('Verschiebung nach rechts')
+
+            with self.gamestate_changelock:
+                for row in self.falling_tetris_field:
+                    del row[-1]
+                    row.insert(0, 0)
+
             if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field):
-                self.falling_tetris_field = backup
+                with self.gamestate_changelock:
+                    self.falling_tetris_field = backup
                 #print('Geht nicht wegen übershneidung right')
             else:
-                self.coordinates[0] += 1
+                with self.gamestate_changelock:
+                    self.coordinates[0] += 1
                 self.create_intersection_field()
                 self.update_field()
         else:
@@ -549,15 +565,17 @@ class Tetris:
         backup = copy.deepcopy(self.falling_tetris_field)
 
         if x_position != 0: # bei null gehts nicht weiter nach links
-            for row in self.falling_tetris_field: #in jeder reihe von falling_tetris_field, das erste element löschen und rechts hinten einfügen -> verschiebt tetris stein nach links
-                del row[0]
-                row.append(0)
+            with self.gamestate_changelock:
+                for row in self.falling_tetris_field: #in jeder reihe von falling_tetris_field, das erste element löschen und rechts hinten einfügen -> verschiebt tetris stein nach links
+                    del row[0]
+                    row.append(0)
             if self.check_for_ueberschneidung(self.existing_block_field, self.falling_tetris_field): # wenn es eine überschneidung gibt, darf (kann) der Tetris stein nicht nach links bewegt werden
-                self.falling_tetris_field = backup  # dann die verschiebung durch das backup rückgängig machen
-                #print('Geht nicht wegen überschneidung left')
+                with self.gamestate_changelock:
+                    self.falling_tetris_field = backup  # dann die verschiebung durch das backup rückgängig machen
 
             else: # sonst die koordinaten verändern und das durch die änderung (verschiebung) entstandene Feld erstellen und ausgeben
-                self.coordinates[0] -= 1
+                with self.gamestate_changelock:
+                    self.coordinates[0] -= 1
                 self.create_intersection_field()
                 self.update_field()
 
